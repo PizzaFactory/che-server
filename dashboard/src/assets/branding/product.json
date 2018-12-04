@@ -1,19 +1,19 @@
 {
-  "title": "Eclipse Che ",
-  "name": "Eclipse Che",
+  "title": "PizzaFactory Camino powered by Eclipse Che ",
+  "name": "PizzaFactory Camino",
   "logoFile": "che-logo.svg",
-  "logoTextFile": "che-logo-text.svg",
+  "logoTextFile": "pf-logo-text.svg",
   "favicon": "favicon.ico",
   "loader": "loader.svg",
   "ideResources": "/_app/",
   "websocketContext": "/api/websocket",
-  "helpPath": "https://www.eclipse.org/che/",
-  "helpTitle": "Community",
-  "supportEmail": "che-dev@eclipse.org",
+  "helpPath": "https://helpdesk.monami-ya.com/",
+  "helpTitle": "Helpdesk",
+  "supportEmail": "support@pizzafactory.jp",
   "oauthDocs": "Configure OAuth in the che.properties file.",
   "workspace": {
-    "priorityStacks": ["Java", "Java-MySQL", "Blank"],
-    "defaultStack": "java-mysql"
+    "priorityStacks": ["Blank"],
+    "defaultStack": "blank-default"
   },
   "cli" : {
     "configName" : "che.env",

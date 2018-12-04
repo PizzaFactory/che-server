@@ -71,6 +71,7 @@
                         <exclude>**/*.eot</exclude>
                         <exclude>**/*.css</exclude>
                         <exclude>**/*.woff</exclude>
+			<exclude>**/pf-logo-text.svg</exclude>
                         <exclude>src/app/colors/che-output-colors.constant.ts</exclude>
                         <exclude>src/app/proxy/proxy-settings.constant.ts</exclude>
                     </excludes>
@@ -182,6 +183,15 @@
             <id>native</id>
             <build>
                 <plugins>
+		    <plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
+			    <excludes>
+				<exclude>node_modules/**/*.java</exclude>
+			    </excludes>
+			</configuration>
+		    </plugin>
                     <plugin>
                         <artifactId>maven-clean-plugin</artifactId>
                         <configuration>
