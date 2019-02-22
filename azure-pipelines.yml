@@ -1,0 +1,53 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+jobs:
+- job: Build
+  timeoutInMinutes: 0
+
+  pool:
+    vmImage: 'Ubuntu-16.04'
+
+  steps:
+  - task: Docker@1
+    displayName: Container registry login
+    inputs:
+      command: login
+      dockerRegistryEndpoint: camino.azurecr.io
+      containerRegistryType: Container Registry
+
+  - script: |
+      set +e
+      docker pull camino.azurecr.io/camino-partial/che-dev
+      if [[ $? != 0 ]]; then
+        docker pull camino.azurecr.io/eclipse/che-dev:nightly
+        docker tag camino.azurecr.io/eclipse/che-dev:nightly camino.azurecr.io/camino-partial/che-dev
+      fi
+    displayName: Pulling the partial image.
+
+  - script: |
+      chmod -R o+rwx .
+      sudo chown -R 1000:1000 .
+    displayName: Chmod / Chown
+
+  - script: |
+      docker run --name che-dev -v $(pwd):/projects --net=host -e MAVEN_OPTS=-Xmx4096m \
+        camino.azurecr.io/camino-partial/che-dev \
+        mvn -DskipTests -Pnative -Dmaven.repo.local=/home/user/.m2/repository -Dhttp.keepAlive=false clean install
+      cd dockerfiles/che
+      ./build.sh
+    displayName: Building
+
+  - script: |
+      docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
+      docker push camino.azurecr.io/eclipse/che-server:nightly
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    displayName: Pushing
+
+  - script: |
+      docker commit che-dev camino.azurecr.io/camino-partial/che-dev
+      docker push camino.azurecr.io/camino-partial/che-dev
+    condition: always()
+    displayName: Storing partial image.
