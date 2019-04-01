@@ -69,7 +69,7 @@
                     window.addEventListener('messsage', (event) => {
                         if (event.data &&
                             event.data.startWith('id-token:') &&
-                            event.origin === window.parent.location) {
+                            event.origin === document.referrer) {
                             keycloak = {
                                 token: event.data.subString(9)
                             }
@@ -77,9 +77,9 @@
                             Loader.startLoading();
                         }
                     });
-                    window.postMessage('get-id-token', window.parent.location);
+                    window.postMessage('get-id-token', document.referrer);
                     setInterval(function() {
-                        window.postMessage('get-id-token', window.parent.location);
+                        window.postMessage('get-id-token', document.referrer);
                     }, 10000);
 
                     return;
