@@ -77,9 +77,9 @@
                             Loader.startLoading();
                         }
                     });
-                    window.postMessage('get-id-token', document.referrer);
+                    window.parent.postMessage('get-id-token', document.referrer);
                     setInterval(function() {
-                        window.postMessage('get-id-token', document.referrer);
+                        window.parent.postMessage('get-id-token', document.referrer);
                     }, 10000);
 
                     return;
