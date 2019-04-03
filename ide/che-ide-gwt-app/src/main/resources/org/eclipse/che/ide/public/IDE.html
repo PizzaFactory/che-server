@@ -66,16 +66,15 @@
                     /*
                      * Get token from the parent window.
                      */
-                    window.addEventListener('messsage', (event) => {
-                        var originHostname = new URL(event.orign).hostname
-                        var baseDomainOrigin = originHostname.substring(baseDomainOrigin.indexOf('.') + 1);
-                        var baseDomainHere = window.locaiton.hostname.substring(window.location.hostname.indexOf('.') + 1);
-
+                    window.addEventListener('message', function (event) {
+                        var originHostname = new URL(event.origin).hostname
+                        var baseDomainOrigin = originHostname.substring(originHostname.indexOf('.') + 1);
+                        var baseDomainHere = window.location.hostname.substring(window.location.hostname.indexOf('.') + 1);
                         if (event.data &&
-                            event.data.startWith('id-token:') &&
+                            event.data.startsWith('id-token:') &&
                             baseDomainOrigin === baseDomainHere) {
                             keycloak = {
-                                token: event.data.subString(9)
+                                token: event.data.substring(9)
                             }
                             window['_keycloak'] = keycloak;
                             Loader.startLoading();
