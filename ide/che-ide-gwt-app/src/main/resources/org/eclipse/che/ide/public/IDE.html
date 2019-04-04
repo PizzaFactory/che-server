@@ -71,6 +71,7 @@
                         var baseDomainOrigin = originHostname.substring(originHostname.indexOf('.') + 1);
                         var baseDomainHere = window.location.hostname.substring(window.location.hostname.indexOf('.') + 1);
                         if (event.data &&
+                            event.data.startsWith &&
                             event.data.startsWith('id-token:') &&
                             baseDomainOrigin === baseDomainHere) {
                             keycloak = {
