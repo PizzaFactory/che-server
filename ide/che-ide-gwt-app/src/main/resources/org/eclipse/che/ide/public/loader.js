@@ -18,6 +18,12 @@ class KeycloakLoader {
 
         return new Promise((resolve, reject) => {
             if (window.location.href !== document.referrer) {
+                /*
+                 * In this case, the Runtime will be blocked to
+                 * access window.parent['_keycloak']
+                 * by the cross domain scripting check.
+                 */
+                resolve();
                 return;
             }
 
