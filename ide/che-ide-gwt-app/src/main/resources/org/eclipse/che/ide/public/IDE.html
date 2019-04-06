@@ -59,34 +59,35 @@
             var keycloak;
 
             /*
+             * Hach for Che7.
+             */
+            this.loadMachineToken = funciton() {
+                /*
+                 * Get the machine token from the parent window.
+                 */
+                window.addEventListener('message', function (event) {
+                    var originHostname = new URL(event.origin).hostname
+                    var baseDomainOrigin = originHostname.substring(originHostname.indexOf('.') + 1);
+                    var baseDomainHere = window.location.hostname.substring(window.location.hostname.indexOf('.') + 1);
+                    if (event.data &&
+                        event.data.startsWith &&
+                        event.data.startsWith('machine-token:') &&
+                        baseDomainOrigin === baseDomainHere) {
+                        /* The token is not from Keycloak. This is a hack. */
+                        keycloak = {
+                            token: event.data.substring(14)
+                        }
+                        window['_keycloak'] = keycloak;
+                        Loader.startLoading();
+                    }
+                });
+                window.top.postMessage('get-machine-token', '*');
+            }
+
+            /*
              * Load keycloak settings
              */
             this.loadKeycloakSettings = function() {
-                if (window.location.href !== document.referrer) {
-                    /*
-                     * Get the machine token from the parent window.
-                     */
-                    window.addEventListener('message', function (event) {
-                        var originHostname = new URL(event.origin).hostname
-                        var baseDomainOrigin = originHostname.substring(originHostname.indexOf('.') + 1);
-                        var baseDomainHere = window.location.hostname.substring(window.location.hostname.indexOf('.') + 1);
-                        if (event.data &&
-                            event.data.startsWith &&
-                            event.data.startsWith('machine-token:') &&
-                            baseDomainOrigin === baseDomainHere) {
-                            /* The token is not from Keycloak. This is a hack. */
-                            keycloak = {
-                                token: event.data.substring(14)
-                            }
-                            window['_keycloak'] = keycloak;
-                            Loader.startLoading();
-                        }
-                    });
-                    window.top.postMessage('get-machine-token', '*');
-
-                    return;
-                }
-
                 var msg = "Cannot load keycloak settings. This is normal for single-user mode.";
                 try {
                     if (window.parent && window.parent['_keycloak']) {
@@ -466,6 +467,7 @@
         };
 
         setTimeout(() => {
+            Loader.loadMachineToken();
             Loader.loadKeycloakSettings();
         }, 1);
 
