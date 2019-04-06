@@ -72,8 +72,8 @@ class IdeIFrameSvc {
       } else if ('hide-navbar' === event.data) {
         $rootScope.hideNavbar = true;
         $mdSidenav('left').close();
-      } else if ('get-machine-token' === event.data && $window['_machineToken']) {
-        event.source.postMessage('machine-token:' + $window['_machineToken'], event.origin);
+      } else if ('get-id-token' === event.data && $window['_keycloak']) {
+        event.source.postMessage('id-token:' + $window['_keycloak'].idToken, event.origin);
       }
 
     }, false);

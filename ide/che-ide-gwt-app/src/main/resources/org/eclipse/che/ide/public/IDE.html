@@ -59,9 +59,9 @@
             var keycloak;
 
             /*
-             * Hach for Che7.
+             * Hack for Che7.
              */
-            this.loadMachineToken = function() {
+            this.checkChe7Environment = function() {
                 /*
                  * Get the machine token from the parent window.
                  */
@@ -71,14 +71,14 @@
                     var baseDomainHere = window.location.hostname.substring(window.location.hostname.indexOf('.') + 1);
                     if (event.data &&
                         event.data.startsWith &&
-                        event.data.startsWith('machine-token:') &&
+                        event.data.startsWith('id-token:') &&
                         baseDomainOrigin === baseDomainHere) {
                         /* The token is not from Keycloak. This is a hack. */
                         keycloak = {
-                            token: event.data.substring(14)
+                            token: event.data.substring(9)
                         }
                         window['_keycloak'] = keycloak;
-                        Loader.startLoading();
+                        Loader.processLoading();
                     }
                 });
                 window.top.postMessage('get-machine-token', '*');
@@ -124,6 +124,7 @@
                     request.send();
                 } catch (e) {
                     console.error(msg, e);
+                    Loader.checkChe7Environment();
                     Loader.startLoading();
                 }
             };
@@ -234,6 +235,11 @@
                         }
                     }                            
                 };
+                Loader.processLoading();
+            };
+
+
+            this.processLoading = function() {
                 //GWT IDE Loading
                 setTimeout(() => {
                     document.getElementById("ide-loader").style.opacity = 1;
