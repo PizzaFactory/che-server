@@ -120,7 +120,6 @@
                     request.send();
                 } catch (e) {
                     console.error(msg, e);
-                    Loader.checkChe7Environment();
                     Loader.startLoading();
                 }
             };
@@ -469,7 +468,6 @@
         };
 
         setTimeout(() => {
-            Loader.loadMachineToken();
             Loader.loadKeycloakSettings();
         }, 1);
 
