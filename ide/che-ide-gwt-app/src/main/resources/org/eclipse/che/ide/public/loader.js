@@ -17,16 +17,6 @@ class KeycloakLoader {
         const msg = "Cannot load keycloak settings. This is normal for single-user mode.";
 
         return new Promise((resolve, reject) => {
-            if (window.location.href !== document.referrer) {
-                /*
-                 * In this case, the Runtime will be blocked to
-                 * access window.parent['_keycloak']
-                 * by the cross domain scripting check.
-                 */
-                resolve();
-                return;
-            }
-
             try {
                 if (window.parent && window.parent['_keycloak']) {
                     window['_keycloak'] = window.parent['_keycloak'];
