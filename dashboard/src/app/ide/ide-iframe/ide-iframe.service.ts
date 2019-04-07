@@ -72,8 +72,8 @@ class IdeIFrameSvc {
       } else if ('hide-navbar' === event.data) {
         $rootScope.hideNavbar = true;
         $mdSidenav('left').close();
-      } else if ('get-id-token' === event.data && $window['_keycloak']) {
-        event.source.postMessage('id-token:' + $window['_keycloak'].idToken, event.origin);
+      } else if ('check-keycloak-available' === event.data) {
+        event.source.postMessage(event.data + ($window['_keycloak'] ? ':true' : ':false'), event.origin);
       }
 
     }, false);
