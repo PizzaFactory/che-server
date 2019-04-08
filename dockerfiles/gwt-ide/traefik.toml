@@ -53,15 +53,6 @@ defaultEntryPoints = ["http"]
         [backends.chemaster.servers.server1]
              url = "http://che-host:8080"
 [frontends]
-  [frontends.frontend_app]
-    priority = 20
-    backend = "ide"
-    passHostHeader = true
-    [frontends.frontend_app.redirect]
-      regex = "^(http|https)://(.*)/gwt/ide/sidecar/entrypoint/_app/(.*)"
-      replacement = "$1://$2/_app/$3"
-    [frontends.frontend_app.routes.ide]
-    rule = "PathPrefix: /; AddPrefix: /ide"
   [frontends.frontend2]
     priority = 10
     backend = "chemaster"
@@ -73,8 +64,8 @@ defaultEntryPoints = ["http"]
     backend = "ide"
     passHostHeader = true
     [frontends.frontend1.redirect]
-      regex = "^(http|https)://(.*)/gwt/ide/sidecar/entrypoint"
-      replacement = "$1://$2/che_workspace_namespace_placeholder/che_workspace_name_placeholder"
+      regex = "^(http|https)://(.*)/gwt/ide/sidecar/entrypoint(/.*)"
+      replacement = "$1://$2/che_workspace_namespace_placeholder/che_workspace_name_placeholder$3"
     [frontends.frontend1.routes.ide]
     rule = "PathPrefix: /; AddPrefix: /ide"
   [frontends.frontend3]
