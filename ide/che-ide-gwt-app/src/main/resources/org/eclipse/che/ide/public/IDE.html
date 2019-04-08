@@ -223,7 +223,7 @@
                                 // Preconfigured IDE may use dedicated port. In this case Chrome browser fails
                                 // with error net::ERR_CONNECTION_REFUSED. Timer helps to open the URL without errors.
                                 setTimeout(function () {
-                                    window.location.href = url;
+                                    window.location.replace(url);
                                 }, 100);
                                 return;
                             }
