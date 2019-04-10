@@ -96,7 +96,7 @@
                         }
                     }
                     window.removeEventListener('message', callback);
-                });
+                };
                 window.addEventListener('message', callback);
                 window.top.postMessage('check-keycloak-available', '*');
             }
