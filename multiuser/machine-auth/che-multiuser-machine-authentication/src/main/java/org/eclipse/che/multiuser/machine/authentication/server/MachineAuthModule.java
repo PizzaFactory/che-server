@@ -79,6 +79,10 @@ public class MachineAuthModule extends AbstractModule {
         .addBinding()
         .toInstance(new MachineAuthenticatedResource("/activity", "active"));
 
+    machineAuthenticatedResources
+        .addBinding()
+        .toInstance(new MachineAuthenticatedResource("/project-template", "getProjectTemplates"));
+
     bindConstant().annotatedWith(Names.named("che.auth.signature_key_size")).to(2048);
     bindConstant().annotatedWith(Names.named("che.auth.signature_key_algorithm")).to("RSA");
   }
