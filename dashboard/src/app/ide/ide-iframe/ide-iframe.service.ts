@@ -10,6 +10,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 'use strict';
+import {CheAPI} from '../../../components/api/che-api.factory';
 import {CheUIElementsInjectorService} from '../../../components/service/injector/che-ui-elements-injector.service';
 
 /*global $:false */
@@ -26,13 +27,14 @@ interface IIdeIFrameRootScope extends ng.IRootScopeService {
  * @author Florent Benoit
  */
 class IdeIFrameSvc {
-  static $inject = ['$window', '$timeout', '$compile', '$location', '$rootScope', '$mdSidenav', 'cheUIElementsInjectorService'];
+  static $inject = ['$window', '$timeout', '$compile', '$location', '$rootScope', '$mdSidenav', 'cheUIElementsInjectorService', 'cheAPI'];
 
   private cheUIElementsInjectorService: CheUIElementsInjectorService;
   private $timeout: ng.ITimeoutService;
   private $compile: ng.ICompileService;
   private $location: ng.ILocationService;
   private $mdSidenav: ng.material.ISidenavService;
+  private cheAPI: CheAPI;
 
   /**
    * Default constructor that is using resource
@@ -43,12 +45,14 @@ class IdeIFrameSvc {
               $location: ng.ILocationService,
               $rootScope: IIdeIFrameRootScope,
               $mdSidenav: ng.material.ISidenavService,
-              cheUIElementsInjectorService: CheUIElementsInjectorService) {
+              cheUIElementsInjectorService: CheUIElementsInjectorService,
+              cheAPI: CheAPI) {
     this.$timeout = $timeout;
     this.$compile = $compile;
     this.$location = $location;
     this.$mdSidenav = $mdSidenav;
     this.cheUIElementsInjectorService = cheUIElementsInjectorService;
+    this.cheAPI = cheAPI;
 
     $window.addEventListener('message', (event: any) => {
       if ('show-ide' === event.data) {
@@ -72,6 +76,18 @@ class IdeIFrameSvc {
       } else if ('hide-navbar' === event.data) {
         $rootScope.hideNavbar = true;
         $mdSidenav('left').close();
+
+      } else if ('check-keycloak-available' === event.data) {
+        event.source.postMessage(event.data + ($window['_keycloak'] ? ':true' : ':false'), event.origin);
+
+      } else if (event.data.startsWith && event.data.startsWith('api-call:')) {
+        const params = JSON.parse(event.data.substring(9));
+        let result: any = null;
+        if (params.method === 'getProfile') {
+           result = cheAPI.getProfile.getProfile();
+        }
+        result._method = params.method;
+        event.source.postMessage('api-reply:' + JSON.stringify(result), event.orgin);
       }
 
     }, false);
