@@ -16,7 +16,6 @@ import {CheNotification} from '../../../../components/notification/che-notificat
 
 const PLUGIN_SEPARATOR = ',';
 const PLUGIN_VERSION_SEPARATOR = ':';
-const PLUGIN_TYPE = 'Che Plugin';
 const EDITOR_TYPE = 'Che Editor';
 
 /**
@@ -38,9 +37,7 @@ export class WorkspacePluginsController {
 
   pluginOrderBy = 'name';
   plugins: Array<IPlugin> = [];
-  editors: Array<IPlugin> = [];
   selectedPlugins: Array<string> = [];
-  selectedEditor: string = '';
 
   pluginFilter: any;
 
@@ -84,14 +81,11 @@ export class WorkspacePluginsController {
    */
   loadPlugins(): void {
     this.plugins = [];
-    this.editors = [];
     this.isLoading = true;
     this.pluginRegistry.fetchPlugins(this.pluginRegistryLocation).then((result: Array<IPlugin>) => {
       this.isLoading = false;
       result.forEach((item: IPlugin) => {
-        if (item.type === EDITOR_TYPE) {
-          this.editors.push(item);
-        } else {
+        if (item.type !== EDITOR_TYPE) {
           this.plugins.push(item);
         }
       });  
@@ -121,10 +115,7 @@ export class WorkspacePluginsController {
   updatePlugin(plugin: IPlugin): void {
     let name = plugin.id + PLUGIN_VERSION_SEPARATOR + plugin.version;
 
-    if (plugin.type === EDITOR_TYPE) {
-      this.selectedEditor = plugin.isEnabled ? name : '';
-      this.workspaceConfig.attributes.editor = this.selectedEditor;
-    } else {
+    if (plugin.type !== EDITOR_TYPE) {
       if (plugin.isEnabled) {
         this.selectedPlugins.push(name);
       } else {
@@ -132,7 +123,7 @@ export class WorkspacePluginsController {
       }
       this.workspaceConfig.attributes.plugins = this.selectedPlugins.join(PLUGIN_SEPARATOR);
     }
-    
+
     this.cleanupInstallers();
     this.onChange();
   }
@@ -156,19 +147,10 @@ export class WorkspacePluginsController {
     // get selected plugins from workspace configuration attribute - "plugins" (coma separated values):
     this.selectedPlugins = this.workspaceConfig && this.workspaceConfig.attributes && this.workspaceConfig.attributes.plugins ?
       this.workspaceConfig.attributes.plugins.split(PLUGIN_SEPARATOR) : [];
-    // get selected plugins from workspace configuration attribute - "editor":
-    this.selectedEditor = this.workspaceConfig && this.workspaceConfig.attributes && this.workspaceConfig.attributes.editor ?
-     this.workspaceConfig.attributes.editor : '';
     // check each plugin's enabled state:
     this.plugins.forEach((plugin: IPlugin) => {
       plugin.isEnabled = this.isPluginEnabled(plugin);
     });
-
-    // check each editor's enabled state:
-    this.editors.forEach((editor: IPlugin) => {
-      editor.isEnabled = this.isEditorEnabled(editor);
-    });
-
     this.cheListHelper.setList(this.plugins, 'name');
   }
 
@@ -181,16 +163,5 @@ export class WorkspacePluginsController {
     // name in the format: id:version
     let name = plugin.id + PLUGIN_VERSION_SEPARATOR + plugin.version;
     return this.selectedPlugins.indexOf(name) >= 0;
-  }
-
-  /**
-   *
-   * @param {IPlugin} plugin
-   * @returns {boolean} the editor's enabled state
-   */
-  private isEditorEnabled(editor: IPlugin): boolean {
-    // name in the format: id:version
-    let name = editor.id + PLUGIN_VERSION_SEPARATOR + editor.version;
-    return name === this.selectedEditor;
   }
 }
