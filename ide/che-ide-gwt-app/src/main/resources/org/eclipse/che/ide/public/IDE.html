@@ -217,12 +217,19 @@
                         return;
                     }
                     var workspace = JSON.parse(this.responseText);
+                    if (!workspace || !workspace.runtime) {
+                        return;
+                    }
                     var machines = workspace.runtime.machines;
                     for (var machineName in machines) {
                         var servers = machines[machineName].servers;
                         for (var serverId in servers) {
                             var attributes = servers[serverId].attributes;
                             if (attributes['type'] === 'ide') {
+                                //Avoid redirection loop in case if gwt-ide loaded in the sidecar
+                                if(servers[serverId].url.contains("gwt/ide/sidecar/entrypoint")){
+                                    return;
+                                }
                                 var url = servers[serverId].url + location.search;
                                 // Preconfigured IDE may use dedicated port. In this case Chrome browser fails
                                 // with error net::ERR_CONNECTION_REFUSED. Timer helps to open the URL without errors.
@@ -232,7 +239,7 @@
                                 return;
                             }
                         }
-                    }                            
+                    }
                 };
                 Loader.processLoading();
             };
