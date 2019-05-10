@@ -12,7 +12,7 @@
 'use strict';
 
 import { WebsocketClient } from './json-rpc/websocket-client';
-import { CheJsonRpcMasterApi } from './json-rpc/che-json-rpc-master-api';
+import { CheJsonRpcMasterApi, WorkspaceStatusChangedEvent } from './json-rpc/che-json-rpc-master-api';
 import { Loader } from './loader/loader';
 
 const WEBSOCKET_CONTEXT = '/api/websocket';
@@ -38,7 +38,7 @@ export class WorkspaceLoader {
 
         try {
             this.workspace = await this.getWorkspace(workspaceKey);
-            await this.handleWorkspace()
+            await this.handleWorkspace();
             await this.openIDE();
         }
         catch(err) {
@@ -78,7 +78,7 @@ export class WorkspaceLoader {
 
     /**
      * Get workspace by ID.
-     * 
+     *
      * @param workspaceId workspace id
      */
     getWorkspace(workspaceId: string): Promise<che.IWorkspace> {
@@ -181,7 +181,7 @@ export class WorkspaceLoader {
 
     /**
      * Shows environment outputs.
-     * 
+     *
      * @param message output message
      */
     onEnvironmentOutput(message) : void {
@@ -192,7 +192,7 @@ export class WorkspaceLoader {
         return new Promise((resolve, reject) => {
             const entryPoint = this.websocketBaseURL() + WEBSOCKET_CONTEXT;
             const master = new CheJsonRpcMasterApi(new WebsocketClient(), entryPoint, this);
-            master.connect(entryPoint)
+            master.connect()
                 .then(() => resolve(master))
                 .catch((error: any) => reject(error));
         });
@@ -208,12 +208,17 @@ export class WorkspaceLoader {
             masterApi.subscribeInstallerOutput(this.workspace.id,
                  (message: any) => this.onEnvironmentOutput(message.text));
             masterApi.subscribeWorkspaceStatus(this.workspace.id,
-                (message: any) => {
+                (message: WorkspaceStatusChangedEvent) => {
                     if (message.error) {
                         reject(new Error(`Failed to run the workspace: "${message.error}"`));
                     } else if (message.status === 'RUNNING') {
                         this.checkWorkspaceRuntime().then(resolve, reject);
                     } else if (message.status === 'STOPPED') {
+                        if (message.prevStatus == 'STARTING') {
+                            this.loader.error('Workspace stopped.');
+                            this.loader.hideLoader();
+                            this.loader.showReload();
+                        }
                         if (this.startAfterStopping) {
                             this.startWorkspace().catch((error: any) => reject(error));
                         }
@@ -259,7 +264,7 @@ export class WorkspaceLoader {
     /**
      * Schedule opening URL.
      * Scheduling prevents appearing an error net::ERR_CONNECTION_REFUSED instead opening the URL.
-     * 
+     *
      * @param url url to be opened
      */
     openURL(url) : void {

@@ -22,6 +22,7 @@ import static org.eclipse.che.api.devfile.server.Constants.PUBLIC_ENDPOINT_ATTRI
 import static org.eclipse.che.api.workspace.shared.Constants.PROJECTS_VOLUME_NAME;
 import static org.eclipse.che.workspace.infrastructure.kubernetes.Constants.MACHINE_NAME_ANNOTATION_FMT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -111,7 +112,7 @@ public class DockerimageComponentToWorkspaceApplier implements ComponentToWorksp
 
     String componentAlias = dockerimageComponent.getAlias();
     String machineName =
-        componentAlias == null ? toObjectName(dockerimageComponent.getImage()) : componentAlias;
+        componentAlias == null ? toMachineName(dockerimageComponent.getImage()) : componentAlias;
 
     MachineConfigImpl machineConfig = new MachineConfigImpl();
     dockerimageComponent
@@ -249,7 +250,29 @@ public class DockerimageComponentToWorkspaceApplier implements ComponentToWorksp
         .build();
   }
 
-  public static String toObjectName(String imageName) {
-    return imageName.replaceAll("/", "-").replaceAll(":", "-");
+  @VisibleForTesting
+  static String toMachineName(String imageName) throws DevfileException {
+    if (imageName.isEmpty()) {
+      return imageName;
+    }
+
+    // the name needs to be both a valid k8s label and a valid machine name.
+    String clean = imageName.replaceAll("[^-a-zA-Z0-9_]", "-");
+
+    if (isInvalidStartEndChar(clean.charAt(0))
+        || isInvalidStartEndChar(clean.charAt(clean.length() - 1))) {
+      throw new DevfileException(
+          format(
+              "Cannot convert image %s to a valid component name."
+                  + " Please provide an alias that conforms to the Kubernetes label value format.",
+              imageName));
+    }
+
+    return clean;
+  }
+
+  /** @return true if the character isn't an ASCII letter (of either case) or a number. */
+  private static boolean isInvalidStartEndChar(char ch) {
+    return ch < '0' || ch > 'z';
   }
 }
