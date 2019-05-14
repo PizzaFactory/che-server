@@ -47,14 +47,21 @@ jobs:
 
   - script: |
       docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
+      docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:$(build.buildId)
       docker tag eclipse/che-editor-gwt-ide:nightly camino.azurecr.io/eclipse/che-editor-gwt-ide:nightly
+      docker tag eclipse/che-editor-gwt-ide:nightly camino.azurecr.io/eclipse/che-editor-gwt-ide:$(build.buildId)
     displayName: Tagging
+
+  - script: |
+      docker push camino.azurecr.io/eclipse/che-server:$(build.buildId)
+      docker push camino.azurecr.io/eclipse/che-editor-gwt-ide:$(build.buildId)
+    displayName: Pushing tagged buildId
 
   - script: |
       docker push camino.azurecr.io/eclipse/che-server:nightly
       docker push camino.azurecr.io/eclipse/che-editor-gwt-ide:nightly
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-    displayName: Pushing
+    displayName: Pushing nightly
 
   - script: |
       docker commit che-dev camino.azurecr.io/camino-partial/che-dev
