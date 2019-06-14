@@ -200,7 +200,6 @@
           "goal": "Run"
         }
       }
-
     ],
     "links": [],
     "category": "Samples",
@@ -214,26 +213,18 @@
     "path": "/web-go-simple",
     "description": "Simple Go Hello World.",
     "projectType": "golang",
-    "mixins": [
-
-    ],
+    "mixins": [],
     "attributes": {
       "language": [
         "go"
       ]
     },
-    "modules": [
-
-    ],
-    "problems": [
-
-    ],
+    "modules": [],
+    "problems": [],
     "source": {
       "type": "git",
       "location": "https://github.com/che-samples/web-go-simple.git",
-      "parameters": {
-
-      }
+      "parameters": {}
     },
     "commands": [
       {
@@ -246,9 +237,7 @@
         }
       }
     ],
-    "links": [
-
-    ],
+    "links": [],
     "category": "Samples",
     "tags": [
       "Go"
@@ -260,26 +249,18 @@
     "path": "/desktop-go-simple",
     "description": "Simple Go Hello World.",
     "projectType": "blank",
-    "mixins": [
-
-    ],
+    "mixins": [],
     "attributes": {
       "language": [
         "go"
       ]
     },
-    "modules": [
-
-    ],
-    "problems": [
-
-    ],
+    "modules": [],
+    "problems": [],
     "source": {
       "type": "git",
       "location": "https://github.com/che-samples/desktop-go-simple.git",
-      "parameters": {
-
-      }
+      "parameters": {}
     },
     "commands": [
       {
@@ -292,9 +273,7 @@
         }
       }
     ],
-    "links": [
-
-    ],
+    "links": [],
     "category": "Samples",
     "tags": [
       "Go"
@@ -712,7 +691,26 @@
       "location": "https://github.com/che-samples/web-php-simple.git",
       "parameters": {}
     },
-    "commands": [],
+    "commands": [
+      {
+        "name": "Start Apache Web Server",
+        "type": "custom",
+        "commandLine": "service apache2 start",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Stop Apache Web Server",
+        "type": "custom",
+        "commandLine": "service apache2 stop",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      }
+    ],
     "links": [],
     "category": "Samples",
     "tags": [
@@ -755,6 +753,189 @@
     "category": "Samples",
     "tags": [
       "php"
+    ]
+  },
+  {
+    "name": "symfony-demo",
+    "displayName": "symfony-demo",
+    "path": "/symfony-demo",
+    "description": "Symfony Demo Application https://symfony.com/",
+    "projectType": "php",
+    "mixins": [],
+    "attributes": {
+      "language": [
+        "php"
+      ]
+    },
+    "modules": [],
+    "problems": [],
+    "source": {
+      "type": "git",
+      "location": "https://github.com/symfony/demo.git",
+      "parameters": {}
+    },
+    "commands": [
+      {
+        "name": "Start Symfony Web Server",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/symfony-demo && $HOME/.symfony/bin/symfony server:start",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Stop Symfony Web Server",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/symfony-demo && $HOME/.symfony/bin/symfony server:stop",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Install dependencies",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/symfony-demo && composer install && wget https://get.symfony.com/cli/installer -O - | bash",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      }
+    ],
+    "links": [],
+    "category": "Samples",
+    "tags": [
+      "MySQL",
+      "PHP"
+    ]
+  },
+  {
+    "name": "laravel-realworld-example-app",
+    "displayName": "laravel-realworld-example-app",
+    "path": "/laravel-realworld-example-app",
+    "description": "Exemplary real world backend API built with Laravel https://realworld.io",
+    "projectType": "php",
+    "mixins": [],
+    "attributes": {
+      "language": [
+        "php"
+      ]
+    },
+    "modules": [],
+    "problems": [],
+    "source": {
+      "type": "git",
+      "location": "https://github.com/gothinkster/laravel-realworld-example-app.git",
+      "parameters": {}
+    },
+    "commands": [
+      {
+        "name": "Start Artisan Web Server",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && php artisan serve",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Install dependencies",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && composer install",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Copy the example env file and make the required configuration changes in the .env file",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && cp .env.example .env",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Generate a new application key",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && php artisan key:generate",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Generate a new JWT authentication secret key",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && php artisan jwt:generate",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Run the database migrations",
+        "type": "custom",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/laravel-realworld-example-app && php artisan migrate",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      }
+    ],
+    "links": [],
+    "category": "Samples",
+    "tags": [
+      "MySQL",
+      "PHP"
+    ]
+  },
+  {
+    "name": "crud-php",
+    "displayName": "pdo",
+    "path": "/pdo",
+    "description": "Code for the simple PHP and MySQL database app tutorial. https://www.taniarascia.com/create-a-simple-database-app-connecting-to-mysql-with-php/",
+    "projectType": "php",
+    "mixins": [],
+    "attributes": {
+      "language": [
+        "php"
+      ]
+    },
+    "modules": [],
+    "problems": [],
+    "source": {
+      "type": "git",
+      "location": "https://github.com/taniarascia/pdo.git",
+      "parameters": {}
+    },
+    "commands": [
+      {
+        "name": "Start Apache Web Server",
+        "type": "custom",
+        "commandLine": "service apache2 start",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "Stop Apache Web Server",
+        "type": "custom",
+        "commandLine": "service apache2 stop",
+        "attributes": {
+          "previewUrl": "",
+          "goal": "Run"
+        }
+      }
+    ],
+    "links": [],
+    "category": "Samples",
+    "tags": [
+      "MySQL",
+      "PHP"
     ]
   },
   {
@@ -1349,7 +1530,8 @@
     "links": [],
     "category": "Samples",
     "tags": [
-      "Python", "Django"
+      "Python",
+      "Django"
     ]
   },
   {
@@ -1484,6 +1666,60 @@
     "category": "Samples",
     "tags": [
       "Go"
+    ]
+  },
+  {
+    "name": "fuse-rest-http-booster",
+    "displayName": "fuse-rest-http-booster",
+    "path": "/fuse-rest-http-booster",
+    "description": "Fuse booster.",
+    "projectType": "maven",
+    "mixins": [],
+    "attributes": {
+      "language": [
+        "java"
+      ]
+    },
+    "modules": [],
+    "problems": [],
+    "source": {
+      "type": "git",
+      "location": "https://github.com/jboss-fuse/fuse-rest-http-booster",
+      "parameters": {}
+    },
+    "commands": [
+      {
+        "name": "build the project",
+        "type": "mvn",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/fuse-rest-http-booster && mvn clean install",
+        "attributes": {
+          "goal": "Run"
+        }
+      },
+      {
+        "name": "run the services",
+        "type": "mvn",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/fuse-rest-http-booster && mvn spring-boot:run -DskipTests",
+        "attributes": {
+          "goal": "Run",
+          "previewUrl": "${server.8080/tcp}"
+        }
+      },
+      {
+        "name": "run and debug the services",
+        "type": "mvn",
+        "commandLine": "cd ${CHE_PROJECTS_ROOT}/fuse-rest-http-booster && mvn spring-boot:run -DskipTests -Drun.jvmArguments=\"-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005\"",
+        "attributes": {
+          "goal": "Debug",
+          "previewUrl": "${server.8080/tcp}"
+        }
+      }
+    ],
+    "links": [],
+    "category": "Samples",
+    "tags": [
+      "Java",
+      "Apache Camel"
     ]
   }
 ]

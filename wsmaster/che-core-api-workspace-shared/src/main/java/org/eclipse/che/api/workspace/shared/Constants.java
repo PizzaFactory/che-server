@@ -43,11 +43,13 @@ public final class Constants {
 
   public static final String CHE_WORKSPACE_AUTO_START = "che.workspace.auto_start";
 
-  /**
-   * Property name for Che plugin registry url. Key name of api workspace/settings method results.
-   */
+  /** Property name for Che plugin registry url. */
   public static final String CHE_WORKSPACE_PLUGIN_REGISTRY_URL_PROPERTY =
       "che.workspace.plugin_registry_url";
+
+  /** Property name for Che Devfile Registry URL. */
+  public static final String CHE_WORKSPACE_DEVFILE_REGISTRY_URL_PROPERTY =
+      "che.workspace.devfile_registry_url";
 
   /** Name for environment variable of machine name */
   public static final String CHE_MACHINE_NAME_ENV_VAR = "CHE_MACHINE_NAME";
@@ -124,6 +126,13 @@ public final class Constants {
    * KubernetesSize}
    */
   public static final String SIDECAR_MEMORY_LIMIT_ATTR_TEMPLATE = "sidecar.%s.memory_limit";
+
+  /**
+   * Template for workspace config attribute key that stores plugin component preference. The first
+   * %s should be replaced with `pluginPublisher/pluginName` and the second one should be replaced
+   * with preference name. Example value: `plugin.redhat/java.preference.java.home`.
+   */
+  public static final String PLUGIN_PREFERENCE_ATTR_TEMPLATE = "plugin.%s.preference.%s";
 
   /**
    * Describes workspace runtimes which perform start/stop of this workspace. Should be set/read

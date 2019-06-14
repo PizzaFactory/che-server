@@ -17,7 +17,7 @@
     <parent>
         <artifactId>che-plugin-nodejs-debugger-parent</artifactId>
         <groupId>org.eclipse.che.plugin</groupId>
-        <version>7.0.0-beta-5.0-SNAPSHOT</version>
+        <version>7.0.0-RC-1.0-SNAPSHOT</version>
     </parent>
     <artifactId>che-plugin-nodejs-debugger-ide</artifactId>
     <packaging>gwt-lib</packaging>
@@ -46,10 +46,12 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-api-project</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.che.core</groupId>
-            <artifactId>che-core-api-workspace</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>icu4j</artifactId>
+                    <groupId>com.ibm.icu</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>

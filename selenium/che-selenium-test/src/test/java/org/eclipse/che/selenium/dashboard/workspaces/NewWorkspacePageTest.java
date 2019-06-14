@@ -16,6 +16,7 @@ import static org.eclipse.che.commons.lang.NameGenerator.generate;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.ANDROID;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.BLANK;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.CAMEL_SPRINGBOOT;
+import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.CAMEL_SPRINGBOOT_CHE7;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.CENTOS_BLANK;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.CENTOS_GO;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.CENTOS_NODEJS;
@@ -43,6 +44,8 @@ import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.K
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.NODE;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.NODEJS_AND_POSTGRES;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.PHP;
+import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.PHP_CHE7;
+import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.PHP_MYSQL_CHE7;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.PYTHON;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.PYTHON_DEFAULT;
 import static org.eclipse.che.selenium.pageobject.dashboard.NewWorkspace.Stack.RAILS;
@@ -89,6 +92,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CPP,
           CHE_7_PREVIEW,
           CHE_7_PREVIEW_DEV,
@@ -101,6 +105,8 @@ public class NewWorkspacePageTest {
           JAVA_MAVEN,
           NODE,
           PHP,
+          PHP_MYSQL_CHE7,
+          PHP_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS);
@@ -112,6 +118,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CPP,
           CHE_7_PREVIEW,
           CHE_7_PREVIEW_DEV,
@@ -124,6 +131,8 @@ public class NewWorkspacePageTest {
           JAVA_MAVEN,
           NODE,
           PHP,
+          PHP_CHE7,
+          PHP_MYSQL_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS);
@@ -136,6 +145,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CPP,
           ECLIPSE_CHE,
           GO_DEFAULT,
@@ -144,6 +154,8 @@ public class NewWorkspacePageTest {
           JAVA_MAVEN,
           NODE,
           PHP,
+          PHP_CHE7,
+          PHP_MYSQL_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS,
@@ -156,6 +168,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CAMEL_SPRINGBOOT,
           CPP,
           CENTOS_BLANK,
@@ -176,6 +189,7 @@ public class NewWorkspacePageTest {
           KOTLIN,
           NODE,
           PHP,
+          PHP_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS,
@@ -188,6 +202,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CAMEL_SPRINGBOOT,
           CPP,
           CENTOS_BLANK,
@@ -208,6 +223,8 @@ public class NewWorkspacePageTest {
           KOTLIN,
           NODE,
           PHP,
+          PHP_CHE7,
+          PHP_MYSQL_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS,
@@ -220,6 +237,7 @@ public class NewWorkspacePageTest {
           DOT_NET_DEFAULT,
           DOT_NET,
           ANDROID,
+          CAMEL_SPRINGBOOT_CHE7,
           CAMEL_SPRINGBOOT,
           CPP,
           CENTOS_BLANK,
@@ -237,13 +255,14 @@ public class NewWorkspacePageTest {
           KOTLIN,
           NODE,
           PHP,
+          PHP_CHE7,
           PYTHON_DEFAULT,
           PYTHON,
           RAILS,
           SPRING_BOOT);
 
   private static final List<NewWorkspace.Stack> EXPECTED_OPENSHIFT_MULTI_MACHINE_STACKS =
-      asList(JAVA_MYSQL_THEIA_ON_KUBERNETES, NODEJS_AND_POSTGRES);
+      asList(JAVA_MYSQL_THEIA_ON_KUBERNETES, NODEJS_AND_POSTGRES, PHP_MYSQL_CHE7);
 
   private static final List<NewWorkspace.Stack> EXPECTED_K8S_MULTI_MACHINE_STACKS =
       asList(JAVA_MYSQL_THEIA_ON_KUBERNETES, NODEJS_AND_POSTGRES);
@@ -259,6 +278,8 @@ public class NewWorkspacePageTest {
               RAILS,
               PYTHON,
               PYTHON_DEFAULT,
+              PHP_CHE7,
+              PHP_MYSQL_CHE7,
               PHP,
               NODE,
               JAVA_MAVEN,
@@ -271,6 +292,7 @@ public class NewWorkspacePageTest {
               CHE_7_PREVIEW_DEV,
               CHE_7_PREVIEW,
               CPP,
+              CAMEL_SPRINGBOOT_CHE7,
               ANDROID,
               DOT_NET,
               DOT_NET_DEFAULT);
@@ -283,6 +305,8 @@ public class NewWorkspacePageTest {
           PYTHON,
           PYTHON_DEFAULT,
           PHP,
+          PHP_CHE7,
+          PHP_MYSQL_CHE7,
           NODE,
           JAVA_MAVEN,
           JAVA_GRADLE,
@@ -294,6 +318,7 @@ public class NewWorkspacePageTest {
           CHE_7_PREVIEW_DEV,
           CHE_7_PREVIEW,
           CPP,
+          CAMEL_SPRINGBOOT_CHE7,
           ANDROID,
           DOT_NET,
           DOT_NET_DEFAULT);
@@ -307,6 +332,8 @@ public class NewWorkspacePageTest {
           RAILS,
           PYTHON,
           PYTHON_DEFAULT,
+          PHP_CHE7,
+          PHP_MYSQL_CHE7,
           PHP,
           NODE,
           JAVA_MAVEN,
@@ -315,6 +342,7 @@ public class NewWorkspacePageTest {
           GO_DEFAULT,
           ECLIPSE_CHE,
           CPP,
+          CAMEL_SPRINGBOOT_CHE7,
           ANDROID,
           DOT_NET,
           DOT_NET_DEFAULT);
