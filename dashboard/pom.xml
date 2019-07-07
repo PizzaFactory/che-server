@@ -73,6 +73,7 @@
                         <exclude>**/*.woff</exclude>
                         <exclude>src/app/colors/che-output-colors.constant.ts</exclude>
                         <exclude>src/app/proxy/proxy-settings.constant.ts</exclude>
+			<exclude>src/assets/branding/pf-logo-text.svg</exclude>
                     </excludes>
                 </configuration>
             </plugin>
