@@ -41,25 +41,19 @@ jobs:
         mvn -DskipTests -Pnative -Dmaven.repo.local=/home/user/.m2/repository -Dhttp.keepAlive=false clean install
       cd dockerfiles/che
       ./build.sh
-      cd ../gwt-ide
-      ./build.sh
     displayName: Building
 
   - script: |
       docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
       docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:$(build.buildId)
-      docker tag eclipse/che-editor-gwt-ide:nightly camino.azurecr.io/eclipse/che-editor-gwt-ide:nightly
-      docker tag eclipse/che-editor-gwt-ide:nightly camino.azurecr.io/eclipse/che-editor-gwt-ide:$(build.buildId)
     displayName: Tagging
 
   - script: |
       docker push camino.azurecr.io/eclipse/che-server:$(build.buildId)
-      docker push camino.azurecr.io/eclipse/che-editor-gwt-ide:$(build.buildId)
     displayName: Pushing tagged buildId
 
   - script: |
       docker push camino.azurecr.io/eclipse/che-server:nightly
-      docker push camino.azurecr.io/eclipse/che-editor-gwt-ide:nightly
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     displayName: Pushing nightly
 
