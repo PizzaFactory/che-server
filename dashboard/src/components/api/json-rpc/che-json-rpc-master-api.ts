@@ -13,6 +13,7 @@
 import {CheJsonRpcApi} from './che-json-rpc-api.factory';
 import {CheJsonRpcApiClient} from './che-json-rpc-api-service';
 import {ICommunicationClient} from './json-rpc-client';
+import {CheKeycloak} from '../che-keycloak.factory';
 
 enum MasterChannels {
   ENVIRONMENT_OUTPUT = <any>'runtime/log',
@@ -42,6 +43,7 @@ export class CheJsonRpcMasterApi {
   private $timeout: ng.ITimeoutService;
   private $interval: ng.IIntervalService;
   private $q: ng.IQService;
+  private cheKeycloak: CheKeycloak;
   private $factory: CheJsonRpcApi;
   private cheJsonRpcApi: CheJsonRpcApiClient;
   private clientId: string;
@@ -54,17 +56,21 @@ export class CheJsonRpcMasterApi {
   private checkingDelay = 10000;
   private fetchingClientIdTimeout = 5000;
 
-  constructor(client: ICommunicationClient,
-              entrypoint: string,
-              $log: ng.ILogService,
-              $timeout: ng.ITimeoutService,
-              $interval: ng.IIntervalService,
-	      $q: ng.IQService,
-	      caller: CheJsonRpcApi) {
+  constructor(
+    client: ICommunicationClient,
+    entrypoint: string,
+    $log: ng.ILogService,
+    $timeout: ng.ITimeoutService,
+    $interval: ng.IIntervalService,
+    $q: ng.IQService,
+    cheKeycloak: CheKeycloak,
+    caller: CheJsonRpcApi
+  ) {
     this.$log = $log;
     this.$timeout = $timeout;
     this.$interval = $interval;
     this.$q = $q;
+    this.cheKeycloak = cheKeycloak;
     this.$factory = caller;
 
     client.addListener('open', () => this.onConnectionOpen(entrypoint));
@@ -157,22 +163,48 @@ export class CheJsonRpcMasterApi {
    * @param entrypoint
    * @returns {IPromise<IHttpPromiseCallbackArg<any>>}
    */
-  connect(entrypoint: string): ng.IPromise<any> {
-    if (this.clientId) {
-      let clientId = `clientId=${this.clientId}`;
-      // in case of reconnection
-      // we need to test entrypoint on existing query parameters
-      // to add already gotten clientId
-      if (/\?/.test(entrypoint) === false) {
-        clientId = '?' + clientId;
-      } else {
-        clientId = '&' + clientId;
-      }
-      entrypoint += clientId;
+  connect(entrypoint: string): ng.IPromise<void> {
+    return this.refreshToken()
+      .then(() => this.addQueryParams(entrypoint))
+      .then((entrypointWithParams: string) => this.cheJsonRpcApi.connect(entrypointWithParams))
+      .then(() => this.fetchClientId());
+  }
+
+  private refreshToken(): ng.IPromise<void> {
+    const defer = this.$q.defer<void>();
+
+    if (this.cheKeycloak.isPresent()) {
+      this.cheKeycloak.keycloak.updateToken(5).success(() => {
+        defer.resolve();
+      }).error(() => {
+        this.$log.warn('Failed to refresh token.');
+        defer.resolve();
+      });
+    } else {
+      defer.resolve();
     }
-    return this.cheJsonRpcApi.connect(entrypoint).then(() => {
-      return this.fetchClientId();
-    });
+    return defer.promise;
+  }
+
+  private addQueryParams(entrypoint: string): string {
+    const params: string[] = [];
+    if (this.cheKeycloak.isPresent()) {
+      params.push(`token=${this.cheKeycloak.keycloak.token}`);
+    }
+    if (this.clientId) {
+      params.push(`clientId=${this.clientId}`);
+    }
+
+    if (params.length === 0) {
+      return entrypoint;
+    }
+
+    const queryStr = params.join('&');
+    if (/\?/.test(entrypoint) === false) {
+      return entrypoint + '?' + queryStr;
+    } else {
+      return entrypoint + '&' + queryStr;
+    }
   }
 
   /**
@@ -307,7 +339,7 @@ export class CheJsonRpcMasterApi {
    *
    * @returns {IPromise<TResult>}
    */
-  fetchClientId(): ng.IPromise<any> {
+  fetchClientId(): ng.IPromise<void> {
     return this.cheJsonRpcApi.request('websocketIdService/getId').then((data: any) => {
       this.clientId = data[0];
     });
