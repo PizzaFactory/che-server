@@ -32,6 +32,7 @@ export * from './pageobjects/ide/ProjectTree';
 export * from './pageobjects/ide/PreviewWidget';
 export * from './pageobjects/ide/GitHubPlugin';
 export * from './pageobjects/ide/DebugView';
+export * from './pageobjects/ide/ContextMenu';
 export * from './pageobjects/ide/WarningDialog';
 export * from './pageobjects/ide/QuickOpenContainer';
 export * from './pageobjects/openshift/OcpWebConsolePage';
