@@ -5,7 +5,6 @@
   "logoTextFile": "pf-logo-text.svg",
   "favicon": "favicon.ico",
   "loader": "loader.svg",
-  "ideResources": "/_app/",
   "websocketContext": "/api/websocket",
   "helpPath": "https://helpdesk.monami-ya.com/",
   "helpTitle": "Helpdesk",
