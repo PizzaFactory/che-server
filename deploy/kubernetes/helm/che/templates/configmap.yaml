@@ -30,7 +30,7 @@ data:
   CHE_DEBUG_SERVER: "true"
   CHE_INFRASTRUCTURE_ACTIVE: "kubernetes"
   CHE_INFRA_KUBERNETES_INGRESS_DOMAIN: {{ .Values.global.ingressDomain }}
-  CHE_INFRA_KUBERNETES_MACHINE__START__TIMEOUT__MIN: "5"
+  CHE_INFRA_KUBERNETES_WORKSPACE__START__TIMEOUT__MIN: "5"
   CHE_INFRA_KUBERNETES_MASTER__URL: ""
 {{- if and .Values.global.tls .Values.global.tls.enabled }}
   CHE_INFRA_KUBERNETES_TLS__ENABLED: {{ .Values.global.tls.enabled | quote}}
@@ -50,7 +50,7 @@ data:
 {{- if and .Values.global.multiuser .Values.customOidcUsernameClaim }}
   CHE_KEYCLOAK_USERNAME__CLAIM: {{ .Values.customOidcUsernameClaim }}
 {{- end }}
-  CHE_INFRA_KUBERNETES_NAMESPACE: {{ .Values.global.cheWorkspacesNamespace | quote}}
+  CHE_INFRA_KUBERNETES_NAMESPACE_DEFAULT: {{ .Values.global.cheWorkspacesNamespace | quote}}
   CHE_INFRA_KUBERNETES_SERVICE__ACCOUNT__NAME: {{ .Values.global.cheWorkspaceServiceAccount }}
   CHE_INFRA_KUBERNETES_TRUST__CERTS: "false"
   CHE_INFRA_KUBERNETES_PVC_STRATEGY: "common"

@@ -11,8 +11,8 @@
  */
 'use strict';
 
-import {NamespaceSelectorSvc} from './namespace-selector/namespace-selector.service';
-import {ProjectSourceSelectorService} from './project-source-selector/project-source-selector.service';
+import {NamespaceSelectorSvc} from './ready-to-go-stacks/namespace-selector/namespace-selector.service';
+import {ProjectSourceSelectorService} from './ready-to-go-stacks/project-source-selector/project-source-selector.service';
 import {CheNotification} from '../../../components/notification/che-notification.factory';
 import {ConfirmDialogService} from '../../../components/service/confirm-dialog/confirm-dialog.service';
 import {CheWorkspace} from '../../../components/api/workspace/che-workspace.factory';
@@ -150,40 +150,7 @@ export class CreateWorkspaceSvc {
     return defer.promise;
   }
 
-  createWorkspaceFromConfig(workspaceConfig: che.IWorkspaceConfig, attributes: any): ng.IPromise<che.IWorkspace> {
-    const namespaceId = this.namespaceSelectorSvc.getNamespaceId(),
-          projectTemplates = this.projectSourceSelectorService.getProjectTemplates();
-
-    return this.checkEditingProgress().then(() => {
-      workspaceConfig.projects = projectTemplates;
-      this.addProjectCommands({config: workspaceConfig}, projectTemplates);
-      return this.cheWorkspace.createWorkspaceFromConfig(namespaceId, workspaceConfig, attributes).then((workspace: che.IWorkspace) => {
-        return this.cheWorkspace.fetchWorkspaces().then(() => this.cheWorkspace.getWorkspaceById(workspace.id));
-      })
-      .then((workspace: che.IWorkspace) => {
-        this.projectSourceSelectorService.clearTemplatesList();
-        const workspaces = this.cheWorkspace.getWorkspaces();
-        if (workspaces.findIndex((_workspace: che.IWorkspace) => {
-            return _workspace.id === workspace.id;
-          }) === -1) {
-          workspaces.push(workspace);
-        }
-        this.cheWorkspace.startUpdateWorkspaceStatus(workspace.id);
-
-        return workspace;
-      }, (error: any) => {
-        let errorMessage = 'Creation workspace failed.';
-        if (error && error.data && error.data.message) {
-          errorMessage = error.data.message;
-        }
-        this.cheNotification.showError(errorMessage);
-
-        return this.$q.reject(error);
-      });
-    });
-  }
-
-  createWorkspaceFromDevfile(sourceDevfile: che.IWorkspaceDevfile, attributes: any): ng.IPromise<che.IWorkspace> {
+  createWorkspaceFromDevfile(sourceDevfile: che.IWorkspaceDevfile, attributes: any, skipProjectTemplates?: boolean): ng.IPromise<che.IWorkspace> {
     const namespaceId = this.namespaceSelectorSvc.getNamespaceId(),
           projectTemplates = this.projectSourceSelectorService.getProjectTemplates();
 
@@ -197,16 +164,16 @@ export class CreateWorkspaceSvc {
       });
 
       projects.push(template);
-    });     
-    
-    return this.checkEditingProgress().then(() => {
-      sourceDevfile.projects = projects;
+    });
 
-      // If no projects defined in devfile were added - remove the commands from devfile as well:
-      if (noProjectsFromDevfile) {
-        sourceDevfile.commands = [];
+    return this.checkEditingProgress().then(() => {
+      if (!skipProjectTemplates) {
+        sourceDevfile.projects = projects;
+        // If no projects defined in devfile were added - remove the commands from devfile as well:
+        if (noProjectsFromDevfile) {
+          sourceDevfile.commands = [];
+        }
       }
-      
       return this.cheWorkspace.createWorkspaceFromDevfile(namespaceId, sourceDevfile, attributes).then((workspace: che.IWorkspace) => {
         return this.cheWorkspace.fetchWorkspaces().then(() => this.cheWorkspace.getWorkspaceById(workspace.id));
       })
@@ -246,7 +213,7 @@ export class CreateWorkspaceSvc {
 
     const title = 'Warning',
           content = `You have project editing, that is not completed. Would you like to proceed to workspace creation without these changes?`;
-    return this.confirmDialogService.showConfirmDialog(title, content, 'Continue');
+    return this.confirmDialogService.showConfirmDialog(title, content, { resolve: 'Continue' });
   }
 
   /**
@@ -288,8 +255,24 @@ export class CreateWorkspaceSvc {
   }
 
   /**
+   * Returns workspaces names for a namespace.
+   *
+   * @param namespace namespace
+   */
+  buildListOfUsedNames(namespace: string): ng.IPromise<string[]> {
+    return this.fetchWorkspacesByNamespace(namespace).then((workspaces: Array<che.IWorkspace>) => {
+      const names = workspaces.filter((workspace: che.IWorkspace) => {
+        return workspace.namespace === namespace;
+      }).map((workspace: che.IWorkspace) => {
+        return this.getWorkspaceName(workspace);
+      });
+      return this.$q.when(names);
+    });
+  }
+
+  /**
    * Returns name of the pointed workspace.
-   * 
+   *
    * @param workspace workspace
    */
   getWorkspaceName(workspace: che.IWorkspace): string {

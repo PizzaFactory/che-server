@@ -380,6 +380,31 @@ export class DriverHelper {
         throw new error.TimeoutError(`Exceeded maximum clearing attempts, to the '${elementLocator}' element`);
     }
 
+    public async clearInvisible(elementLocator: By, timeout: number = TestConstants.TS_SELENIUM_DEFAULT_TIMEOUT) {
+        const attempts: number = TestConstants.TS_SELENIUM_DEFAULT_ATTEMPTS;
+        const polling: number = TestConstants.TS_SELENIUM_DEFAULT_POLLING;
+
+        Logger.trace(`DriverHelper.clearInvisible ${elementLocator}`);
+
+        for (let i = 0; i < attempts; i++) {
+            const element: WebElement = await this.waitPresence(elementLocator, timeout);
+
+            try {
+                await element.clear();
+                return;
+            } catch (err) {
+                if (err instanceof error.StaleElementReferenceError) {
+                    await this.wait(polling);
+                    continue;
+                }
+
+                throw err;
+            }
+        }
+
+        throw new error.TimeoutError(`Exceeded maximum clearing attempts, to the '${elementLocator}' element`);
+    }
+
     public async enterValue(elementLocator: By, text: string, timeout: number = TestConstants.TS_SELENIUM_DEFAULT_TIMEOUT) {
         Logger.trace(`DriverHelper.enterValue ${elementLocator} text: ${text}`);
 
@@ -435,7 +460,7 @@ export class DriverHelper {
     }
 
     public async reloadPage() {
-        Logger.trace('DriverHelper.reloadPage');
+        Logger.debug('DriverHelper.reloadPage');
 
         await this.driver.navigate().refresh();
     }
@@ -448,7 +473,7 @@ export class DriverHelper {
     }
 
     public async navigateToUrl(url: string) {
-        Logger.trace(`DriverHelper.navigateToUrl ${url}`);
+        Logger.debug(`DriverHelper.navigateToUrl ${url}`);
 
         await this.driver.navigate().to(url);
     }
@@ -509,7 +534,7 @@ export class DriverHelper {
     }
 
     async switchToSecondWindow(mainWindowHandle: string) {
-        Logger.trace('DriverHelper.switchToSecondWindow');
+        Logger.debug('DriverHelper.switchToSecondWindow');
 
         await this.waitOpenningSecondWindow();
         const handles: string[] = await this.driver.getAllWindowHandles();

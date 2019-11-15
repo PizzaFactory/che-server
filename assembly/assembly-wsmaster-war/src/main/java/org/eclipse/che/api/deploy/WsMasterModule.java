@@ -42,6 +42,7 @@ import org.eclipse.che.api.user.server.jpa.JpaPreferenceDao;
 import org.eclipse.che.api.user.server.jpa.JpaUserDao;
 import org.eclipse.che.api.user.server.spi.PreferenceDao;
 import org.eclipse.che.api.user.server.spi.UserDao;
+import org.eclipse.che.api.workspace.server.WorkspaceEntityProvider;
 import org.eclipse.che.api.workspace.server.WorkspaceLockService;
 import org.eclipse.che.api.workspace.server.WorkspaceStatusCache;
 import org.eclipse.che.api.workspace.server.devfile.DevfileModule;
@@ -59,9 +60,6 @@ import org.eclipse.che.api.workspace.server.spi.provision.env.LegacyEnvVarProvid
 import org.eclipse.che.api.workspace.server.spi.provision.env.MachineTokenEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.MavenOptsEnvVariableProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.ProjectsRootEnvVariableProvider;
-import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceAgentCorsAllowCredentialsEnvVarProvider;
-import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceAgentCorsAllowedOriginsEnvVarProvider;
-import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceAgentCorsEnabledEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceAgentJavaOptsEnvVariableProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceIdEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceNameEnvVarProvider;
@@ -70,6 +68,7 @@ import org.eclipse.che.api.workspace.server.token.MachineTokenProvider;
 import org.eclipse.che.api.workspace.server.wsplugins.ChePluginsApplier;
 import org.eclipse.che.commons.auth.token.ChainedTokenExtractor;
 import org.eclipse.che.commons.auth.token.RequestTokenExtractor;
+import org.eclipse.che.commons.observability.deploy.ExecutorWrapperModule;
 import org.eclipse.che.core.db.DBTermination;
 import org.eclipse.che.core.db.schema.SchemaInitializer;
 import org.eclipse.che.core.tracing.metrics.TracingMetricsModule;
@@ -148,6 +147,7 @@ public class WsMasterModule extends AbstractModule {
 
     install(new DevfileModule());
 
+    bind(WorkspaceEntityProvider.class);
     bind(org.eclipse.che.api.workspace.server.TemporaryWorkspaceRemover.class);
     bind(org.eclipse.che.api.workspace.server.WorkspaceService.class);
     install(new FactoryModuleBuilder().build(ServersCheckerFactory.class));
@@ -177,14 +177,6 @@ public class WsMasterModule extends AbstractModule {
     legacyEnvVarProviderMultibinders
         .addBinding()
         .to(WorkspaceAgentJavaOptsEnvVariableProvider.class);
-
-    legacyEnvVarProviderMultibinders
-        .addBinding()
-        .to(WorkspaceAgentCorsAllowedOriginsEnvVarProvider.class);
-    legacyEnvVarProviderMultibinders
-        .addBinding()
-        .to(WorkspaceAgentCorsAllowCredentialsEnvVarProvider.class);
-    legacyEnvVarProviderMultibinders.addBinding().to(WorkspaceAgentCorsEnabledEnvVarProvider.class);
 
     bind(org.eclipse.che.api.workspace.server.event.WorkspaceJsonRpcMessenger.class)
         .asEagerSingleton();
@@ -269,12 +261,12 @@ public class WsMasterModule extends AbstractModule {
     if (Boolean.valueOf(System.getenv("CHE_METRICS_ENABLED"))) {
       install(new org.eclipse.che.core.metrics.MetricsModule());
       install(new WsMasterMetricsModule());
-      install(new MetricsOverrideBinding());
     }
     if (Boolean.valueOf(System.getenv("CHE_TRACING_ENABLED"))
         && Boolean.valueOf(System.getenv("CHE_METRICS_ENABLED"))) {
       install(new TracingMetricsModule());
     }
+    install(new ExecutorWrapperModule());
   }
 
   private void configureSingleUserMode(Map<String, String> persistenceProperties) {
