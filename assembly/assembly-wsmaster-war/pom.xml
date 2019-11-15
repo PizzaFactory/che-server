@@ -17,7 +17,7 @@
     <parent>
         <artifactId>che-assembly-parent</artifactId>
         <groupId>org.eclipse.che</groupId>
-        <version>7.3.0-SNAPSHOT</version>
+        <version>7.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>assembly-wsmaster-war</artifactId>
     <packaging>war</packaging>
@@ -74,14 +74,6 @@
         <dependency>
             <groupId>io.jaegertracing</groupId>
             <artifactId>jaeger-tracerresolver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -186,6 +178,10 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-commons-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.core</groupId>
+            <artifactId>che-core-commons-observability</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
@@ -353,7 +349,7 @@
         </dependency>
         <dependency>
             <groupId>org.jgroups.kubernetes</groupId>
-            <artifactId>kubernetes</artifactId>
+            <artifactId>jgroups-kubernetes</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -440,7 +436,7 @@
                                 <dep>org.eclipse.che.multiuser:che-multiuser-keycloak-token-provider</dep>
                                 <dep>org.eclipse.persistence:org.eclipse.persistence.extension</dep>
                                 <dep>org.eclipse.persistence:org.eclipse.persistence.jpa</dep>
-                                <dep>org.jgroups.kubernetes:kubernetes</dep>
+                                <dep>org.jgroups.kubernetes:jgroups-kubernetes</dep>
                                 <dep>org.postgresql:postgresql</dep>
                                 <dep>com.google.guava:guava</dep>
                                 <dep>org.everrest:everrest-core</dep>

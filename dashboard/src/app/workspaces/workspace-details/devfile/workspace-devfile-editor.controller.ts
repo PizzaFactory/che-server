@@ -10,6 +10,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 'use strict';
+import {CheBranding} from '../../../../components/branding/che-branding.factory';
 /**
  * @ngdoc controller
  * @name workspaces.devfile-editor.controller:WorkspaceDevfileEditorController
@@ -18,100 +19,109 @@
  */
 export class WorkspaceDevfileEditorController {
 
-  static $inject = ['$log', '$scope', '$timeout'];
+  static $inject = [
+    '$log',
+    '$scope',
+    '$timeout',
+    'cheBranding'
+  ];
+  private $log: ng.ILogService;
+  private $scope: ng.IScope;
+  private $timeout: ng.ITimeoutService;
+  private cheBranding: CheBranding;
 
-  $log: ng.ILogService;
-  $scope: ng.IScope;
-  $timeout: ng.ITimeoutService;
+  private isActive: boolean;
+  private workspaceDevfile: che.IWorkspaceDevfile;
+  private workspaceDevfileOnChange: Function;
+  private devfileDocsUrl: string;
 
-  editorOptions: {
-    lineWrapping: boolean,
-    lineNumbers: boolean,
-    matchBrackets: boolean,
-    mode: string,
-    onLoad: Function
-  };
-  devfileValidationMessages: string[] = [];
-  isActive: boolean;
-  workspaceDevfile: che.IWorkspaceDevfile;
-  devfileYaml: string;
-  newWorkspaceDevfile: che.IWorkspaceDevfile;
-  workspaceDevfileOnChange: Function;
+  private validationErrors: string[] = [];
+  private devfileYaml: string;
   private saveTimeoutPromise: ng.IPromise<any>;
-  private isSaving: boolean;
 
 
   /**
    * Default constructor that is using resource
    */
-  constructor($log: ng.ILogService, $scope: ng.IScope, $timeout: ng.ITimeoutService) {
+  constructor(
+    $log: ng.ILogService,
+    $scope: ng.IScope,
+    $timeout: ng.ITimeoutService,
+    cheBranding: CheBranding
+  ) {
     this.$log = $log;
     this.$scope = $scope;
     this.$timeout = $timeout;
-    this.isSaving = false;
+    this.cheBranding = cheBranding;
     this.devfileYaml = jsyaml.dump(this.workspaceDevfile);
+
+    this.$scope.$on('edit-workspace-details', (event: ng.IAngularEvent, attrs: { status: string }) => {
+      if (attrs.status === 'cancelled') {
+        this.$onInit();
+      }
+    });
 
     $scope.$watch(() => {
       return this.workspaceDevfile;
     }, () => {
-      let editedWorkspaceDevfile;
+      let devfile: che.IWorkspaceDevfile;
       try {
-        editedWorkspaceDevfile = jsyaml.load(this.devfileYaml);
-        angular.extend(editedWorkspaceDevfile, this.workspaceDevfile);
+        devfile = jsyaml.safeLoad(this.devfileYaml);
       } catch (e) {
-        editedWorkspaceDevfile = this.workspaceDevfile;
+        return;
       }
-      this.devfileYaml = jsyaml.dump(this.workspaceDevfile);
-      const validateOnly = true;
-      this.onChange(validateOnly);
+
+      if (angular.equals(devfile, this.workspaceDevfile) === false) {
+        angular.extend(devfile, this.workspaceDevfile);
+        this.devfileYaml = jsyaml.safeDump(devfile);
+        this.validate();
+      }
     }, true);
   }
 
-  $onInit(): void { }
+  $onInit(): void {
+    this.devfileYaml = jsyaml.safeDump(this.workspaceDevfile);
+    this.devfileDocsUrl = this.cheBranding.getDocs().devfile;
+  }
+
+  validate() {
+    this.validationErrors = [];
+
+    let devfile: che.IWorkspaceDevfile;
+    try {
+      devfile = jsyaml.safeLoad(this.devfileYaml);
+    } catch (e) {
+      if (e.name === 'YAMLException') {
+        this.validationErrors = [e.message];
+      }
+      if (this.validationErrors.length === 0) {
+        this.validationErrors = ['Devfile is invalid.'];
+      }
+      this.$log.error(e);
+    }
+  }
 
   /**
    * Callback when editor content is changed.
    */
-  onChange(validateOnly?: boolean): void {
-    this.devfileValidationMessages = [];
-    if (!this.devfileYaml) {
+  onChange(): void {
+    if (!this.isActive) {
       return;
     }
-
-    let devfile;
-    try {
-      devfile = jsyaml.load(this.devfileYaml);
-    } catch (e) {
-      if (e.name === 'YAMLException') {
-        this.devfileValidationMessages = [e.message];
-      }
-      if (this.devfileValidationMessages.length === 0) {
-        this.devfileValidationMessages = ['Devfile is invalid.'];
-      }
-      this.$log.error(e);
-    }
-
-    if (validateOnly || !this.isActive) {
-      return;
-    }
-    this.isSaving = (this.devfileValidationMessages.length === 0) && !angular.equals(devfile, this.workspaceDevfile);
 
     if (this.saveTimeoutPromise) {
       this.$timeout.cancel(this.saveTimeoutPromise);
     }
 
     this.saveTimeoutPromise = this.$timeout(() => {
-      // immediately apply config on IU
-      this.newWorkspaceDevfile = angular.copy(devfile);
-      this.isSaving = false;
-      this.applyChanges();
-    }, 2000);
+      this.validate();
+      if (this.validationErrors.length !== 0) {
+        return;
+      }
+
+      angular.extend(this.workspaceDevfile, jsyaml.safeLoad(this.devfileYaml));
+      this.workspaceDevfileOnChange({devfile: this.workspaceDevfile});
+    }, 200);
   }
 
-  /**
-   * Callback when user applies new config.
-   */
-  applyChanges(): void {
-    this.workspaceDevfileOnChange({devfile: this.newWorkspaceDevfile});
-  }
 }

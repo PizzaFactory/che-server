@@ -16,6 +16,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
+import org.eclipse.che.api.workspace.server.devfile.Constants;
 import org.eclipse.che.api.workspace.server.devfile.exception.DevfileFormatException;
 import org.eclipse.che.api.workspace.server.devfile.schema.DevfileSchemaProvider;
 import org.testng.annotations.BeforeClass;
@@ -66,7 +67,11 @@ public class DevfileSchemaValidatorTest {
       {"editor_plugin_component/devfile_editor_plugins_components_with_memory_limit.yaml"},
       {"editor_plugin_component/devfile_plugin_component_with_reference.yaml"},
       {"devfile/devfile_just_generatename.yaml"},
-      {"devfile/devfile_name_and_generatename.yaml"}
+      {"devfile/devfile_name_and_generatename.yaml"},
+      {"devfile/devfile_with_sparse_checkout_dir.yaml"},
+      {"devfile/devfile_name_and_generatename.yaml"},
+      {"command/devfile_command_with_preview_url.yaml"},
+      {"command/devfile_command_with_preview_url_only_port.yaml"},
     };
   }
 
@@ -80,6 +85,24 @@ public class DevfileSchemaValidatorTest {
           e.getMessage(),
           format("Devfile schema validation failed. Error: %s", expectedMessage),
           "DevfileFormatException thrown with message that doesn't match expected message:");
+      return;
+    }
+    fail("DevfileFormatException expected to be thrown but is was not");
+  }
+
+  @Test
+  public void shouldThrowExceptionWhenDevfileHasUnsupportedApiVersion() throws Exception {
+    try {
+      String devfile =
+          "---\n" + "apiVersion: 111.111\n" + "metadata:\n" + "  name: test-invalid-apiversion\n";
+      schemaValidator.validateYaml(devfile);
+    } catch (DevfileFormatException e) {
+      assertEquals(
+          e.getMessage(),
+          "Version '111.111' of the devfile is not supported. "
+              + "Supported versions are '"
+              + Constants.SUPPORTED_VERSIONS
+              + "'.");
       return;
     }
     fail("DevfileFormatException expected to be thrown but is was not");
@@ -199,6 +222,26 @@ public class DevfileSchemaValidatorTest {
       {
         "dockerimage_component/devfile_dockerimage_component_with_indistinctive_field_selector.yaml",
         "(/components/0/selector):The object must not have a property whose name is \"selector\"."
+      },
+      {
+        "command/devfile_command_with_empty_preview_url.yaml",
+        "(/commands/0/previewUrl):The value must be of object type, but actual type is null."
+      },
+      {
+        "command/devfile_command_with_preview_url_port_is_string.yaml",
+        "(/commands/0/previewUrl/port):The value must be of number type, but actual type is string."
+      },
+      {
+        "command/devfile_command_with_preview_url_port_is_too_high.yaml",
+        "(/commands/0/previewUrl/port):The numeric value must be less than or equal to 65535."
+      },
+      {
+        "command/devfile_command_with_preview_url_port_is_negative.yaml",
+        "(/commands/0/previewUrl/port):The numeric value must be greater than or equal to 0."
+      },
+      {
+        "command/devfile_command_with_preview_url_only_path.yaml",
+        "(/commands/0/previewUrl):The object must have a property whose name is \"port\"."
       },
     };
   }

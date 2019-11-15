@@ -6,7 +6,7 @@ projects:
   - name: petclinic
     source:
       type: git
-      location: 'https://github.com/spring-projects/spring-petclinic.git'
+      location: "https://github.com/spring-projects/spring-petclinic.git"
 components:
   - type: cheEditor
     id: eclipse/che-theia/next
@@ -27,9 +27,7 @@ components:
       app.kubernetes.io/component: database
   - type: dockerimage
     alias: maven-container
-    image: bujhtr5555/maven-with-artifacts:latest
-    command: ['sleep']
-    args: ['infinity']
+    image: quay.io/eclipse/happy-path:nightly
     env:
       - name: MAVEN_CONFIG
         value: /home/user/.m2
@@ -44,29 +42,28 @@ commands:
     actions:
       - type: exec
         component: maven-container
-        command: mvn clean package >> build.txt
+        command: mvn clean package >> build.txt && tail -n 40 /projects/petclinic/build.txt | grep 'BUILD SUCCESS' > /projects/petclinic/result-build.txt
         workdir: /projects/petclinic
   - name: build-file-output
     actions:
       - type: exec
         component: maven-container
-        command: 'mkdir -p /projects/petclinic/?/.m2 && cp -r /.m2/* /projects/petclinic/?/.m2 && cd /projects/petclinic && mvn package >> build-output.txt'
-        workdir: /projects/petclinic
+        command: cd /projects/petclinic && mvn package >> build-output.txt && tail -n 40 /projects/petclinic/build-output.txt | grep 'BUILD SUCCESS' > /projects/petclinic/result-build-output.txt
   - name: run
     actions:
       - type: exec
         component: maven-container
-        command: java -jar spring-petclinic-2.1.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
+        command: java -jar spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
         workdir: /projects/petclinic/target
   - name: run-with-changes
     actions:
       - type: exec
         component: maven-container
-        command: java -jar spring-petclinic-2.1.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
+        command: java -jar spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
         workdir: /projects/petclinic/target
   - name: run-debug
     actions:
       - type: exec
         component: maven-container
-        command: java -jar -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044 spring-petclinic-2.1.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
+        command: java -jar -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044 spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar --spring.profiles.active=mysql
         workdir: /projects/petclinic/target
