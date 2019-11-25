@@ -261,6 +261,8 @@ public class WsMasterModule extends AbstractModule {
     if (Boolean.valueOf(System.getenv("CHE_METRICS_ENABLED"))) {
       install(new org.eclipse.che.core.metrics.MetricsModule());
       install(new WsMasterMetricsModule());
+    } else {
+      install(new org.eclipse.che.core.metrics.NoopMetricsModule());
     }
     if (Boolean.valueOf(System.getenv("CHE_TRACING_ENABLED"))
         && Boolean.valueOf(System.getenv("CHE_METRICS_ENABLED"))) {
@@ -339,6 +341,7 @@ public class WsMasterModule extends AbstractModule {
 
     // Permission filters
     bind(org.eclipse.che.multiuser.permission.system.SystemServicePermissionsFilter.class);
+    bind(org.eclipse.che.multiuser.permission.system.JvmServicePermissionsFilter.class);
     bind(
         org.eclipse.che.multiuser.permission.system.SystemEventsSubscriptionPermissionsCheck.class);
 
