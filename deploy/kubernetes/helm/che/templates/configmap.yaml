@@ -106,6 +106,11 @@ data:
   CHE_WORKSPACE_PLUGIN__REGISTRY__URL: http://{{ printf .Values.global.chePluginRegistryUrlFormat .Release.Namespace .Values.global.ingressDomain }}/v3
   {{- end }}
 {{- end }}
+{{- if .Values.che.workspace.pluginBroker }}
+  {{- if .Values.che.workspace.pluginBroker.waitTimeoutMin }}
+  CHE_WORKSPACE_PLUGIN__BROKER_WAIT__TIMEOUT__MIN: {{ .Values.che.workspace.pluginBroker.waitTimeoutMin | quote }}
+  {{- end }}
+{{- end }}
 {{- if .Values.workspaceSidecarDefaultRamLimit }}
   CHE_WORKSPACE_SIDECAR_DEFAULT__MEMORY__LIMIT__MB: {{ .Values.workspaceSidecarDefaultRamLimit }}
 {{- end }}
