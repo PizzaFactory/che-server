@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -96,11 +97,11 @@ public class KubernetesNamespace {
   }
 
   public KubernetesNamespace(
-      KubernetesClientFactory clientFactory, String name, String workspaceId) {
+      KubernetesClientFactory clientFactory, Executor executor, String name, String workspaceId) {
     this.clientFactory = clientFactory;
     this.workspaceId = workspaceId;
     this.name = name;
-    this.deployments = new KubernetesDeployments(name, workspaceId, clientFactory);
+    this.deployments = new KubernetesDeployments(name, workspaceId, clientFactory, executor);
     this.services = new KubernetesServices(name, workspaceId, clientFactory);
     this.pvcs = new KubernetesPersistentVolumeClaims(name, workspaceId, clientFactory);
     this.ingresses = new KubernetesIngresses(name, workspaceId, clientFactory);
@@ -141,23 +142,20 @@ public class KubernetesNamespace {
 
   /**
    * Deletes the namespace. Deleting a non-existent namespace is not an error as is not an attempt
-   * to delete a namespace that is already being deleted.
+   * to delete a namespace that is already being deleted. If the namespace is not marked as managed,
+   * it is silently not deleted.
    *
-   * @throws InfrastructureException if the namespace is not marked managed or when any unexpected
-   *     exception occurs during namespace deletion
+   * @throws InfrastructureException if any unexpected exception occurs during namespace deletion
    */
   void deleteIfManaged() throws InfrastructureException {
     KubernetesClient client = clientFactory.create(workspaceId);
 
-    if (!isManagedInternal(client)) {
-      throw new InfrastructureException(
-          format(
-              "Can't delete namespace '%s' that contains"
-                  + " runtime of workspace '%s' because it doesn't have the '"
-                  + MANAGED_NAMESPACE_LABEL
-                  + "' label equal to 'true'.",
-              name,
-              workspaceId));
+    if (!isNamespaceManaged(client)) {
+      LOG.info(
+          "Namespace {} for workspace {} is not marked as managed. Ignoring the delete request.",
+          name,
+          workspaceId);
+      return;
     }
 
     try {
@@ -175,7 +173,7 @@ public class KubernetesNamespace {
     }
   }
 
-  private boolean isManagedInternal(KubernetesClient client) throws InfrastructureException {
+  private boolean isNamespaceManaged(KubernetesClient client) throws InfrastructureException {
     try {
       Namespace namespace = client.namespaces().withName(name).get();
       return namespace.getMetadata().getLabels() != null

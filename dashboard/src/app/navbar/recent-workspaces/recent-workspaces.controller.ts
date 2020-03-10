@@ -12,7 +12,7 @@
 'use strict';
 import { CheWorkspace } from '../../../components/api/workspace/che-workspace.factory';
 import IdeSvc from '../../../app/ide/ide.service';
-import { CheBranding } from '../../../components/branding/che-branding.factory';
+import { CheBranding } from '../../../components/branding/che-branding';
 import { WorkspacesService } from '../../workspaces/workspaces.service';
 import { CheNotification } from '../../../components/notification/che-notification.factory';
 import { WorkspaceDetailsService } from '../../workspaces/workspace-details/workspace-details.service';
@@ -92,6 +92,15 @@ export class NavbarRecentWorkspacesController {
     this.dropdownItems = {};
     this.dropdownItemTempl = [];
 
+    const handler = (workspaces: Array<che.IWorkspace>) => {
+      this.workspaces = workspaces;
+      this.updateRecentWorkspaces();
+    };
+    this.cheWorkspace.addListener('onChangeWorkspaces', handler);
+    $scope.$on('$destroy', () => {
+      this.cheWorkspace.removeListener('onChangeWorkspaces', handler);
+    });
+
     let cleanup = $rootScope.$on('recent-workspace:set', (event: ng.IAngularEvent, workspaceId: string) => {
       this.veryRecentWorkspaceId = workspaceId;
       this.updateRecentWorkspaces();
@@ -99,22 +108,14 @@ export class NavbarRecentWorkspacesController {
     $rootScope.$on('$destroy', () => {
       cleanup();
     });
-
-    $scope.$watch(() => {
-      return this.workspaces;
-    }, () => {
-      this.updateRecentWorkspaces();
-    }, true);
   }
 
   $onInit(): void {
     this.workspaceCreationLink = this.cheBranding.getWorkspace().creationLink;
 
-    // get workspaces
-    this.workspaces = this.cheWorkspace.getWorkspaces();
-
-    // fetch workspaces when initializing
-    this.cheWorkspace.fetchWorkspaces();
+    this.cheWorkspace.fetchWorkspaces().then(() => {
+      this.workspaces = this.cheWorkspace.getWorkspaces();
+    });
 
     this.updateRecentWorkspaces();
     this.fetchWorkspaceSettings();

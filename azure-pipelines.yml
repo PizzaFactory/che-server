@@ -44,8 +44,8 @@ jobs:
     displayName: Building
 
   - script: |
-      docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
-      docker tag eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:$(build.buildId)
+      docker tag quay.io/eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
+      docker tag quay.io/eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:$(build.buildId)
     displayName: Tagging
 
   - script: |

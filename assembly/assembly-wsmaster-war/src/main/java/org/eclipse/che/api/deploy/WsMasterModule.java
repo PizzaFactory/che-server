@@ -60,7 +60,6 @@ import org.eclipse.che.api.workspace.server.spi.provision.env.LegacyEnvVarProvid
 import org.eclipse.che.api.workspace.server.spi.provision.env.MachineTokenEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.MavenOptsEnvVariableProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.ProjectsRootEnvVariableProvider;
-import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceAgentJavaOptsEnvVariableProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceIdEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceNameEnvVarProvider;
 import org.eclipse.che.api.workspace.server.spi.provision.env.WorkspaceNamespaceNameEnvVarProvider;
@@ -89,11 +88,11 @@ import org.eclipse.che.security.PBKDF2PasswordEncryptor;
 import org.eclipse.che.security.PasswordEncryptor;
 import org.eclipse.che.security.oauth.EmbeddedOAuthAPI;
 import org.eclipse.che.security.oauth.OAuthAPI;
+import org.eclipse.che.security.oauth.OpenShiftOAuthModule;
 import org.eclipse.che.workspace.infrastructure.kubernetes.KubernetesInfraModule;
 import org.eclipse.che.workspace.infrastructure.kubernetes.KubernetesInfrastructure;
 import org.eclipse.che.workspace.infrastructure.kubernetes.environment.KubernetesEnvironment;
 import org.eclipse.che.workspace.infrastructure.kubernetes.server.secure.SecureServerExposerFactory;
-import org.eclipse.che.workspace.infrastructure.kubernetes.server.secure.jwtproxy.factory.JwtProxyConfigBuilderFactory;
 import org.eclipse.che.workspace.infrastructure.kubernetes.server.secure.jwtproxy.factory.JwtProxyProvisionerFactory;
 import org.eclipse.che.workspace.infrastructure.kubernetes.server.secure.jwtproxy.factory.JwtProxySecureServerExposerFactory;
 import org.eclipse.che.workspace.infrastructure.openshift.OpenShiftClientConfigFactory;
@@ -174,10 +173,6 @@ public class WsMasterModule extends AbstractModule {
     legacyEnvVarProviderMultibinders.addBinding().to(MavenOptsEnvVariableProvider.class);
 
     legacyEnvVarProviderMultibinders.addBinding().to(AgentAuthEnableEnvVarProvider.class);
-    legacyEnvVarProviderMultibinders
-        .addBinding()
-        .to(WorkspaceAgentJavaOptsEnvVariableProvider.class);
-
     bind(org.eclipse.che.api.workspace.server.event.WorkspaceJsonRpcMessenger.class)
         .asEagerSingleton();
     bind(org.eclipse.che.everrest.EverrestDownloadFileResponseFilter.class);
@@ -269,6 +264,8 @@ public class WsMasterModule extends AbstractModule {
       install(new TracingMetricsModule());
     }
     install(new ExecutorWrapperModule());
+
+    install(new OpenShiftOAuthModule());
   }
 
   private void configureSingleUserMode(Map<String, String> persistenceProperties) {
@@ -382,7 +379,6 @@ public class WsMasterModule extends AbstractModule {
   }
 
   private void configureJwtProxySecureProvisioner(String infrastructure) {
-    install(new FactoryModuleBuilder().build(JwtProxyConfigBuilderFactory.class));
     install(new FactoryModuleBuilder().build(JwtProxyProvisionerFactory.class));
     if (KubernetesInfrastructure.NAME.equals(infrastructure)) {
       install(
