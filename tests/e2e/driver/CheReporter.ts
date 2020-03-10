@@ -9,8 +9,8 @@
  **********************************************************************/
 import * as mocha from 'mocha';
 import { IDriver } from './IDriver';
-import { e2eContainer } from '../inversify.config';
-import { TYPES, CLASSES } from '../inversify.types';
+import { inversifyConfig } from '..';
+import { TYPES, CLASSES } from '..';
 import * as fs from 'fs';
 import * as rm from 'rimraf';
 import { TestConstants } from '../TestConstants';
@@ -18,13 +18,16 @@ import { logging } from 'selenium-webdriver';
 import { DriverHelper } from '../utils/DriverHelper';
 import { ScreenCatcher } from '../utils/ScreenCatcher';
 import { ITestWorkspaceUtil } from '../utils/workspace/ITestWorkspaceUtil';
+import { PreferencesHandler, AskForConfirmationType } from '../utils/PreferencesHandler';
 
+const e2eContainer = inversifyConfig.e2eContainer;
 const driver: IDriver = e2eContainer.get(TYPES.Driver);
 const driverHelper: DriverHelper = e2eContainer.get(CLASSES.DriverHelper);
 const screenCatcher: ScreenCatcher = e2eContainer.get(CLASSES.ScreenCatcher);
 let methodIndex: number = 0;
 let deleteScreencast: boolean = true;
 let testWorkspaceUtil: ITestWorkspaceUtil = e2eContainer.get(TYPES.WorkspaceUtil);
+let preferencesHalder: PreferencesHandler = e2eContainer.get(CLASSES.PreferencesHandler);
 
 class CheReporter extends mocha.reporters.Spec {
   constructor(runner: mocha.Runner, options: mocha.MochaOptions) {
@@ -47,7 +50,7 @@ class CheReporter extends mocha.reporters.Spec {
       TS_SELENIUM_WORKSPACE_STATUS_ATTEMPTS: ${TestConstants.TS_SELENIUM_WORKSPACE_STATUS_ATTEMPTS}
       TS_SELENIUM_WORKSPACE_STATUS_POLLING: ${TestConstants.TS_SELENIUM_WORKSPACE_STATUS_POLLING}
       TS_SELENIUM_PLUGIN_PRECENCE_ATTEMPTS: ${TestConstants.TS_SELENIUM_PLUGIN_PRECENCE_ATTEMPTS}
-      TS_SELENIUM_PLUGIN_PRECENCE_POLLING: ${TestConstants.TS_SELENIUM_PLUGIN_PRECENCE_POLLING}
+      TS_SELENIUM_PLUGIN_PRECENCE_POLLING: ${TestConstants.TS_SELENIUM_DEFAULT_POLLING}
       TS_SELENIUM_HAPPY_PATH_WORKSPACE_NAME: ${TestConstants.TS_SELENIUM_HAPPY_PATH_WORKSPACE_NAME}
       TS_SELENIUM_USERNAME: ${TestConstants.TS_SELENIUM_USERNAME}
       TS_SELENIUM_PASSWORD: ${TestConstants.TS_SELENIUM_PASSWORD}
@@ -64,6 +67,7 @@ class CheReporter extends mocha.reporters.Spec {
       console.log(launchInformation);
 
       rm.sync(TestConstants.TS_SELENIUM_REPORT_FOLDER);
+      preferencesHalder.setConfirmExit(AskForConfirmationType.never);
     });
 
     runner.on('test', async function (test: mocha.Test) {

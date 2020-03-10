@@ -12,18 +12,20 @@
   "oauthDocs": "Configure OAuth in the che.properties file.",
   "workspace": {
     "priorityStacks": ["Blank"],
-    "defaultStack": "blank-default"
+    "defaultStack": "blank-default",
+    "creationLink": "#/create-workspace"
   },
-  "cli" : {
-    "configName" : "che.env",
-    "name" : "CHE"
+  "cli": {
+    "configName": "che.env",
+    "name": "CHE"
   },
-  "docs" : {
-    "devfile" : "/docs/che-7/using-developer-environments-workspaces.html#making-a-workspace-portable-using-a-devfile_using-developer-environments-workspaces",
-    "workspace" : "/docs/che-7/workspaces-overview/",
-    "factory" : "/docs/factories-getting-started.html",
+  "docs": {
+    "devfile": "/docs/che-7/making-a-workspace-portable-using-a-devfile/",
+    "workspace": "/docs/che-7/workspaces-overview/",
+    "factory": "/docs/factories-getting-started.html",
     "organization": "/docs/organizations.html",
     "converting": "/docs/che-7/converting-a-che-6-workspace-to-a-che-7-devfile/",
+    "certificate": "/docs/che-7/setup-che-in-tls-mode-with-self-signed-certificate/",
     "general": "/docs/che-7"
   }
 }

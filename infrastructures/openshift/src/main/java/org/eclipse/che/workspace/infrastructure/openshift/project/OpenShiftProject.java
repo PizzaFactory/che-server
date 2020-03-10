@@ -22,6 +22,7 @@ import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.ProjectRequestFluent;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
+import java.util.concurrent.Executor;
 import org.eclipse.che.api.workspace.server.spi.InfrastructureException;
 import org.eclipse.che.workspace.infrastructure.kubernetes.KubernetesInfrastructureException;
 import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.KubernetesConfigsMaps;
@@ -74,8 +75,9 @@ public class OpenShiftProject extends KubernetesNamespace {
     this.routes = routes;
   }
 
-  public OpenShiftProject(OpenShiftClientFactory clientFactory, String name, String workspaceId) {
-    super(clientFactory, name, workspaceId);
+  public OpenShiftProject(
+      OpenShiftClientFactory clientFactory, Executor executor, String name, String workspaceId) {
+    super(clientFactory, executor, name, workspaceId);
     this.clientFactory = clientFactory;
     this.routes = new OpenShiftRoutes(name, workspaceId, clientFactory);
   }
@@ -123,7 +125,8 @@ public class OpenShiftProject extends KubernetesNamespace {
 
   /**
    * Deletes the project. Deleting a non-existent projects is not an error as is not an attempt to
-   * delete a project that is already being deleted.
+   * delete a project that is already being deleted. If the project is not marked as managed, it is
+   * silently not deleted.
    *
    * @throws InfrastructureException if any unexpected exception occurs during project deletion
    */
@@ -133,15 +136,12 @@ public class OpenShiftProject extends KubernetesNamespace {
 
     OpenShiftClient osClient = clientFactory.createOC(workspaceId);
 
-    if (!isManagedInternal(osClient)) {
-      throw new InfrastructureException(
-          format(
-              "Can't delete project '%s' that contains"
-                  + " runtime of workspace '%s' because it doesn't have the '"
-                  + MANAGED_NAMESPACE_LABEL
-                  + "' label equal to 'true'.",
-              projectName,
-              workspaceId));
+    if (!isProjectManaged(osClient)) {
+      LOG.debug(
+          "Project {} for workspace {} is not marked as managed. Ignoring the delete request.",
+          projectName,
+          workspaceId);
+      return;
     }
 
     delete(projectName, osClient);
@@ -226,7 +226,7 @@ public class OpenShiftProject extends KubernetesNamespace {
     }
   }
 
-  private boolean isManagedInternal(OpenShiftClient client) throws InfrastructureException {
+  private boolean isProjectManaged(OpenShiftClient client) throws InfrastructureException {
     try {
       Project namespace = client.projects().withName(getName()).get();
       return namespace.getMetadata().getLabels() != null

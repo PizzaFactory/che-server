@@ -28,6 +28,10 @@ public final class Constants {
   public static final String LINK_REL_ENVIRONMENT_OUTPUT_CHANNEL = "environment/outputChannel";
   public static final String LINK_REL_ENVIRONMENT_STATUS_CHANNEL = "environment/statusChannel";
 
+  public static final String DEBUG_WORKSPACE_START = "debug-workspace-start";
+  public static final String DEBUG_WORKSPACE_START_LOG_LIMIT_BYTES =
+      "che.workspace.startup_debug_log_limit_bytes";
+
   public static final String WORKSPACE_STOPPED_BY = "stopped_by";
   public static final String WORKSPACE_STOP_REASON = "stop_reason";
 
@@ -36,6 +40,23 @@ public final class Constants {
   public static final String LINK_REL_DELETE_ICON = "delete icon link";
 
   public static final String CHE_WORKSPACE_AUTO_START = "che.workspace.auto_start";
+
+  /**
+   * The configuration property that defines a default value for persist volumes that clients like
+   * Dashboard should propose for users during workspace creation.
+   *
+   * <p>Possible values: true or false
+   *
+   * <ul>
+   *   <li>In case of true - PersistentVolumeClaims are used by declared volumes by user and
+   *       plugins. `true` value is supposed not to be set explicitly in Devfile attributes since
+   *       it's default fixed behaviour.
+   *   <li>In case of false - emptyDir is used instead of PVCs. Note that data will be lost after
+   *       workspace restart.
+   * </ul>
+   */
+  public static final String CHE_WORKSPACE_PERSIST_VOLUMES_PROPERTY =
+      "che.workspace.persist_volumes.default";
 
   /** Property name for Che plugin registry url. */
   public static final String CHE_WORKSPACE_PLUGIN_REGISTRY_URL_PROPERTY =
