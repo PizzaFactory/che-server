@@ -53,6 +53,12 @@
                 <version>${version.jsr305.plugin}</version>
             </dependency>
             <dependency>
+                <groupId>jp.pizzafactory.che.dashboard</groupId>
+                <artifactId>che-dashboard-war</artifactId>
+                <version>${che.dashboard.version}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.tomcat</groupId>
                 <artifactId>tomcat-catalina</artifactId>
                 <version>${org.apache.tomcat.version}</version>
@@ -475,12 +481,6 @@
                 <version>${che.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.che.dashboard</groupId>
-                <artifactId>che-dashboard-war</artifactId>
-                <version>${che.dashboard.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.che.docs</groupId>
                 <artifactId>che-docs</artifactId>
                 <version>${che.docs.version}</version>
@@ -722,6 +722,15 @@
             <id>ossrh</id>
             <name>central public snapshots</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
+            <id>che-dashboard</id>
+            <name>che-dashbord for PizzaFactory</name>
+            <url>https://pkgs.dev.azure.com/pizzafactory/camino/_packaging/che-dashboard/maven/v1</url>
         </repository>
     </repositories>
     <pluginRepositories>
