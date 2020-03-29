@@ -78,6 +78,7 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.log.LogWatc
 import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.log.LogWatcher;
 import org.eclipse.che.workspace.infrastructure.kubernetes.namespace.log.PodLogHandler;
 import org.eclipse.che.workspace.infrastructure.kubernetes.util.PodEvents;
+import org.eclipse.che.workspace.infrastructure.kubernetes.util.RuntimeEventsPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -525,8 +526,21 @@ public class KubernetesDeployments {
               if (POD_OBJECT_KIND.equals(involvedObject.getKind())
                   || REPLICASET_OBJECT_KIND.equals(involvedObject.getKind())
                   || DEPLOYMENT_OBJECT_KIND.equals(involvedObject.getKind())) {
-
                 String podName = involvedObject.getName();
+                String lastTimestamp = event.getLastTimestamp();
+                if (lastTimestamp == null) {
+                  String firstTimestamp = event.getFirstTimestamp();
+                  if (firstTimestamp != null) {
+                    // Done in the same way like it made in
+                    // https://github.com/kubernetes/kubernetes/pull/86557
+                    lastTimestamp = firstTimestamp;
+                  } else {
+                    LOG.warn(
+                        "lastTimestamp and firstTimestamp are undefined. Event: {}.  Fallback to the current time.",
+                        event);
+                    lastTimestamp = PodEvents.convertDateToEventTimestamp(new Date());
+                  }
+                }
 
                 PodEvent podEvent =
                     new PodEvent(
@@ -535,7 +549,7 @@ public class KubernetesDeployments {
                         event.getReason(),
                         event.getMessage(),
                         event.getMetadata().getCreationTimestamp(),
-                        event.getLastTimestamp());
+                        lastTimestamp);
 
                 try {
                   if (happenedAfterWatcherInitialization(podEvent)) {
@@ -601,6 +615,7 @@ public class KubernetesDeployments {
    */
   public synchronized void watchLogs(
       PodLogHandler handler,
+      RuntimeEventsPublisher eventsPublisher,
       LogWatchTimeouts timeouts,
       Set<String> podNames,
       long limitInputStreamBytes)
@@ -610,6 +625,7 @@ public class KubernetesDeployments {
       logWatcher =
           new LogWatcher(
               clientFactory,
+              eventsPublisher,
               workspaceId,
               namespace,
               podNames,
