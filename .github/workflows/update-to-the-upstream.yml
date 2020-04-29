@@ -1,0 +1,37 @@
+name: UpdateToTheUpstream
+
+on:
+  schedule:
+    - cron: "0 8 * * 5"
+jobs:
+  pr-for-merging-upstream:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: merge-push
+      run: |
+        git config --global user.email "monaka@monami-ya.com"
+        git config --global user.name "Masaki Muranaka (bot)"
+        git remote add up https://github.com/eclipse/che.git
+        git fetch --all
+        git checkout -b prp-update-to-the-upstream
+        git merge up/master -m 'Update to the upstream.'
+    - name: install hub
+      uses: geertvdc/setup-hub@v1.0.0
+    - name: create PR
+      env:
+        GITHUB_USER: ${{ secrets.GITHUB_USER }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        hub pull-request -b pizzafactory:azure-pipelines -h pizzafactory:prp-update-to-the-upstream -m "[Scheduled] Update to the upstream" --push -f
+    - name: Notify to Google Chat
+      uses: Co-qn/google-chat-notification@releases/v1
+      with:
+        name: Update to the upstream
+        url: ${{ secrets.GOOGLE_CHAT_WEBHOOK }}
+        status: ${{ job.status }}
+      if: always()
