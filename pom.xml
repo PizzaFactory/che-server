@@ -519,6 +519,12 @@
                 <version>${javax.ws.rs.version}</version>
             </dependency>
             <dependency>
+                <groupId>jp.pizzafactory.che.dashboard</groupId>
+                <artifactId>che-dashboard-war</artifactId>
+                <version>${che.dashboard.version}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
@@ -966,12 +972,6 @@
                 <groupId>org.eclipse.che.core</groupId>
                 <artifactId>wsmaster-local</artifactId>
                 <version>${che.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jp.pizzafactory.che.dashboard</groupId>
-                <artifactId>che-dashboard-war</artifactId>
-                <version>${che.dashboard.version}</version>
-                <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.che.infrastructure</groupId>
