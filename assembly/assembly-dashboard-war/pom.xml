@@ -26,13 +26,13 @@
     <inceptionYear>2018</inceptionYear>
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.che.core</groupId>
-            <artifactId>che-core-commons-j2ee</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jp.pizzafactory.che.dashboard</groupId>
             <artifactId>che-dashboard-war</artifactId>
             <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.core</groupId>
+            <artifactId>che-core-commons-j2ee</artifactId>
         </dependency>
     </dependencies>
     <build>
