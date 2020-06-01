@@ -40,7 +40,7 @@ jobs:
         camino.azurecr.io/camino-partial/che-dev \
         mvn -DskipTests -Pnative -Dmaven.repo.local=/home/user/.m2/repository -Dhttp.keepAlive=false clean install
       cd dockerfiles/che
-      ./build.sh
+      ./build.sh --build-arg:CHE_DASHBOARD_ORGANIZATION=camino.azurecr.io/camino
     displayName: Building
 
   - script: |
