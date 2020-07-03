@@ -52,7 +52,7 @@ export const TestConstants = {
     /**
      * Timeout in milliseconds waiting for page load, "120 000" by default.
      */
-    TS_SELENIUM_LOAD_PAGE_TIMEOUT: Number(process.env.TS_SELENIUM_LOAD_PAGE_TIMEOUT) || 120000,
+    TS_SELENIUM_LOAD_PAGE_TIMEOUT: Number(process.env.TS_SELENIUM_LOAD_PAGE_TIMEOUT) || 180000,
 
     /**
      * Timeout in milliseconds waiting for language server initialization, "180 000" by default.
@@ -62,7 +62,7 @@ export const TestConstants = {
     /**
      * Default timeout for most of the waitings, "20 000" by default.
      */
-    TS_SELENIUM_DEFAULT_TIMEOUT: Number(process.env.TS_SELENIUM_DEFAULT_TIMEOUT) || 20000,
+    TS_SELENIUM_DEFAULT_TIMEOUT: Number(process.env.TS_SELENIUM_DEFAULT_TIMEOUT) || 60000,
 
     /**
      * Default ammount of tries, "5" by default.
@@ -238,12 +238,12 @@ export const TestConstants = {
     /**
      * Login for a user whom has been created in the test Openshift cluster. Need for Openshift connector test
      */
-    TS_TEST_OPENSHIFT_PLUGIN_USERNAME: process.env.TS_LOGIN_NAME_OF_OPENSHIFT_REGULAR_USER || '',
+    TS_TEST_OPENSHIFT_PLUGIN_USERNAME: process.env.TS_TEST_OPENSHIFT_PLUGIN_USERNAME || '',
 
     /**
      * Password for a user whom has been created in the test Openshift cluster. Need for Openshift connector test
      */
-    TS_TEST_OPENSHIFT_PLUGIN_PASSWORD: process.env.TS_PASSWORD_OF_OPENSHIFT_REGULAR_USER || '',
+    TS_TEST_OPENSHIFT_PLUGIN_PASSWORD: process.env.TS_TEST_OPENSHIFT_PLUGIN_PASSWORD || '',
 
     /**
      * The name of project in the Openshidt plugin tree
