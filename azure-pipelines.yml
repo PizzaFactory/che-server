@@ -58,7 +58,7 @@ jobs:
     displayName: Pushing nightly
 
   - script: |
-      docker commit che-dev camino.azurecr.io/camino-partial/che-dev
+      docker export che-dev | docker import - camino.azurecr.io/camino-partial/che-dev
       docker push camino.azurecr.io/camino-partial/che-dev
     condition: always()
     displayName: Storing partial image.
