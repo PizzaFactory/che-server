@@ -6,6 +6,10 @@
 trigger:
 - azure-pipelines
 
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Xmx4096m -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER) -Dhttp.keepAlive=false -DskipTests -DskipIntegrationTests'
+
 jobs:
 - job: Build
   timeoutInMinutes: 0
@@ -21,27 +25,30 @@ jobs:
       dockerRegistryEndpoint: camino.azurecr.io
       containerRegistryType: Container Registry
 
-  - script: |
-      set +e
-      docker pull camino.azurecr.io/camino-partial/che-dev
-      if [[ $? != 0 ]]; then
-        docker pull quay.io/eclipse/che-java11-maven:nightly
-        docker tag quay.io/eclipse/che-java11-maven:nightly camino.azurecr.io/camino-partial/che-dev
-      fi
-    displayName: Pulling the partial image.
+  - task: Cache@2
+    inputs:
+      key: 'maven | "$(Agent.OS)" | **/pom.xml'
+      restoreKeys: |
+        maven | "$(Agent.OS)"
+        maven
+      path: $(MAVEN_CACHE_FOLDER)
+    displayName: Cache Maven local repo
 
   - script: |
       chmod -R o+rwx .
       sudo chown -R 1000:1000 .
     displayName: Chmod / Chown
 
+  - task: Maven@3
+    inputs:
+      jdkVersionOption: '1.11'
+      mavenPomFile: 'pom.xml'
+      mavenOptions: '$(MAVEN_OPTS)'
+
   - script: |
-      docker run --name che-dev -v $(pwd):/projects --net=host -e MAVEN_OPTS=-Xmx4096m \
-        camino.azurecr.io/camino-partial/che-dev \
-        mvn -DskipTests -Pnative -Dmaven.repo.local=/home/user/.m2/repository -Dhttp.keepAlive=false clean install
       cd dockerfiles/che
       ./build.sh --build-arg:CHE_DASHBOARD_ORGANIZATION=camino.azurecr.io/camino
-    displayName: Building
+    displayName: Building the image
 
   - script: |
       docker tag quay.io/eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
@@ -57,8 +64,3 @@ jobs:
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     displayName: Pushing nightly
 
-  - script: |
-      docker export che-dev | docker import - camino.azurecr.io/camino-partial/che-dev
-      docker push camino.azurecr.io/camino-partial/che-dev
-    condition: always()
-    displayName: Storing partial image.
