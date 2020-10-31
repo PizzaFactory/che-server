@@ -21,7 +21,7 @@
     </parent>
     <groupId>org.eclipse.che</groupId>
     <artifactId>che-parent</artifactId>
-    <version>7.20.0-SNAPSHOT</version>
+    <version>7.22.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Che Parent</name>
     <modules>
@@ -42,8 +42,8 @@
     <properties>
         <?SORTPOM IGNORE?>
         <build.info>${project.version}</build.info>
-        <che.dashboard.version>7.20.0-SNAPSHOT</che.dashboard.version>
-        <che.version>7.20.0-SNAPSHOT</che.version>
+        <che.dashboard.version>7.22.0-SNAPSHOT</che.dashboard.version>
+        <che.version>7.22.0-SNAPSHOT</che.version>
         <specification.version>1.0-beta2</specification.version>
         <?SORTPOM RESUME?>
         <aopalliance.version>1.0</aopalliance.version>
@@ -88,7 +88,7 @@
         <javax.validation.version>1.1.0.Final</javax.validation.version>
         <javax.websocket.api.version>1.1</javax.websocket.api.version>
         <javax.ws.rs.version>2.0</javax.ws.rs.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.13.1</junit.version>
         <logstash.logback.encoder.version>4.11</logstash.logback.encoder.version>
         <mysql.connector.version>8.0.16</mysql.connector.version>
         <net.java.dev.jna.version>4.1.0</net.java.dev.jna.version>
@@ -97,7 +97,7 @@
         <org.apache.maven.plugin-testing.maven-plugin-testing-harness.version>3.3.0</org.apache.maven.plugin-testing.maven-plugin-testing-harness.version>
         <org.apache.maven.plugin-tools.plugin-annotations.version>3.2</org.apache.maven.plugin-tools.plugin-annotations.version>
         <org.apache.maven.verson>3.3.3</org.apache.maven.verson>
-        <org.apache.tomcat.version>8.5.56</org.apache.tomcat.version>
+        <org.apache.tomcat.version>8.5.59</org.apache.tomcat.version>
         <org.codehaus.plexus.utils.version>3.0.20</org.codehaus.plexus.utils.version>
         <org.eclipse.persistence.eclipselink.version>2.7.5</org.eclipse.persistence.eclipselink.version>
         <org.eclipse.persistence.version>2.2.0</org.eclipse.persistence.version>
@@ -524,12 +524,6 @@
                 <version>${javax.ws.rs.version}</version>
             </dependency>
             <dependency>
-                <groupId>jp.pizzafactory.che.dashboard</groupId>
-                <artifactId>che-dashboard-war</artifactId>
-                <version>${che.dashboard.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
@@ -705,6 +699,22 @@
             <dependency>
                 <groupId>org.eclipse.che.core</groupId>
                 <artifactId>che-core-api-core</artifactId>
+                <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.core</groupId>
+                <artifactId>che-core-api-devfile</artifactId>
+                <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.core</groupId>
+                <artifactId>che-core-api-devfile</artifactId>
+                <version>${che.version}</version>
+                <classifier>tests</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.core</groupId>
+                <artifactId>che-core-api-devfile-shared</artifactId>
                 <version>${che.version}</version>
             </dependency>
             <dependency>
@@ -979,6 +989,12 @@
                 <version>${che.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.che.dashboard</groupId>
+                <artifactId>che-dashboard-war</artifactId>
+                <version>${che.dashboard.version}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.che.infrastructure</groupId>
                 <artifactId>infrastructure-distributed</artifactId>
                 <version>${che.version}</version>
@@ -1094,6 +1110,11 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.che.multiuser</groupId>
+                <artifactId>che-multiuser-keycloak-user-remover</artifactId>
+                <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.multiuser</groupId>
                 <artifactId>che-multiuser-machine-authentication</artifactId>
                 <version>${che.version}</version>
             </dependency>
@@ -1112,6 +1133,12 @@
                 <groupId>org.eclipse.che.multiuser</groupId>
                 <artifactId>che-multiuser-permission-devfile</artifactId>
                 <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.multiuser</groupId>
+                <artifactId>che-multiuser-permission-devfile</artifactId>
+                <version>${che.version}</version>
+                <classifier>tests</classifier>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.che.multiuser</groupId>
@@ -1391,15 +1418,6 @@
             <name>central public snapshots</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-            <id>che-dashboard</id>
-            <name>che-dashbord for PizzaFactory</name>
-            <url>https://pkgs.dev.azure.com/pizzafactory/camino/_packaging/che-dashboard/maven/v1</url>
-        </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
@@ -1425,6 +1443,7 @@
             <id>fast</id>
             <properties>
                 <findbugs.skip>true</findbugs.skip>
+                <fmt.skip>true</fmt.skip>
                 <license.skip>true</license.skip>
                 <mdep.analyze.skip>true</mdep.analyze.skip>
                 <skipTests>true</skipTests>
