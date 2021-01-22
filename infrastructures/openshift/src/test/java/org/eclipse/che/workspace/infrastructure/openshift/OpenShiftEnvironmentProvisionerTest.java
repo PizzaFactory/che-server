@@ -31,6 +31,7 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.provision.ProxySettin
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.ServiceAccountProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.SshKeysProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.TlsProvisionerProvider;
+import org.eclipse.che.workspace.infrastructure.kubernetes.provision.TolerationsProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.VcsSslCertificateProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.env.EnvVarsConverter;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.limits.ram.ContainerResourceProvisioner;
@@ -38,6 +39,7 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.provision.restartpoli
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.server.ServersConverter;
 import org.eclipse.che.workspace.infrastructure.openshift.environment.OpenShiftEnvironment;
 import org.eclipse.che.workspace.infrastructure.openshift.provision.OpenShiftUniqueNamesProvisioner;
+import org.eclipse.che.workspace.infrastructure.openshift.provision.OpenshiftTrustedCAProvisioner;
 import org.eclipse.che.workspace.infrastructure.openshift.provision.RouteTlsProvisioner;
 import org.eclipse.che.workspace.infrastructure.openshift.server.OpenShiftPreviewUrlExposer;
 import org.mockito.InOrder;
@@ -78,8 +80,10 @@ public class OpenShiftEnvironmentProvisionerTest {
   @Mock private OpenShiftPreviewUrlExposer previewUrlEndpointsProvisioner;
   @Mock private VcsSslCertificateProvisioner vcsSslCertificateProvisioner;
   @Mock private NodeSelectorProvisioner nodeSelectorProvisioner;
+  @Mock private TolerationsProvisioner tolerationsProvisioner;
   @Mock private GatewayRouterProvisioner gatewayRouterProvisioner;
   @Mock private DeploymentMetadataProvisioner deploymentMetadataProvisioner;
+  @Mock private OpenshiftTrustedCAProvisioner trustedCAProvisioner;
 
   private OpenShiftEnvironmentProvisioner osInfraProvisioner;
 
@@ -103,6 +107,7 @@ public class OpenShiftEnvironmentProvisionerTest {
             imagePullSecretProvisioner,
             proxySettingsProvisioner,
             nodeSelectorProvisioner,
+            tolerationsProvisioner,
             asyncStorageProvisioner,
             asyncStoragePodObserver,
             serviceAccountProvisioner,
@@ -112,7 +117,8 @@ public class OpenShiftEnvironmentProvisionerTest {
             previewUrlEndpointsProvisioner,
             vcsSslCertificateProvisioner,
             gatewayRouterProvisioner,
-            deploymentMetadataProvisioner);
+            deploymentMetadataProvisioner,
+            trustedCAProvisioner);
     provisionOrder =
         inOrder(
             logsVolumeMachineProvisioner,
@@ -124,6 +130,7 @@ public class OpenShiftEnvironmentProvisionerTest {
             restartPolicyRewriter,
             ramLimitProvisioner,
             nodeSelectorProvisioner,
+            tolerationsProvisioner,
             podTerminationGracePeriodProvisioner,
             imagePullSecretProvisioner,
             proxySettingsProvisioner,
@@ -134,7 +141,8 @@ public class OpenShiftEnvironmentProvisionerTest {
             gitConfigProvisioner,
             previewUrlEndpointsProvisioner,
             gatewayRouterProvisioner,
-            deploymentMetadataProvisioner);
+            deploymentMetadataProvisioner,
+            trustedCAProvisioner);
   }
 
   @Test
@@ -146,10 +154,10 @@ public class OpenShiftEnvironmentProvisionerTest {
     provisionOrder.verify(envVarsProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(volumesStrategy).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(restartPolicyRewriter).provision(eq(osEnv), eq(runtimeIdentity));
-    provisionOrder.verify(uniqueNamesProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(tlsRouteProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(ramLimitProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(nodeSelectorProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
+    provisionOrder.verify(tolerationsProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder
         .verify(podTerminationGracePeriodProvisioner)
         .provision(eq(osEnv), eq(runtimeIdentity));
@@ -162,6 +170,8 @@ public class OpenShiftEnvironmentProvisionerTest {
     provisionOrder.verify(gitConfigProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(gatewayRouterProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verify(deploymentMetadataProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
+    provisionOrder.verify(trustedCAProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
+    provisionOrder.verify(uniqueNamesProvisioner).provision(eq(osEnv), eq(runtimeIdentity));
     provisionOrder.verifyNoMoreInteractions();
   }
 }

@@ -35,6 +35,7 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.provision.ServiceAcco
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.SshKeysProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.TlsProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.TlsProvisionerProvider;
+import org.eclipse.che.workspace.infrastructure.kubernetes.provision.TolerationsProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.UniqueNamesProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.VcsSslCertificateProvisioner;
 import org.eclipse.che.workspace.infrastructure.kubernetes.provision.env.EnvVarsConverter;
@@ -44,6 +45,7 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.provision.server.Serv
 import org.eclipse.che.workspace.infrastructure.kubernetes.server.PreviewUrlExposer;
 import org.eclipse.che.workspace.infrastructure.openshift.environment.OpenShiftEnvironment;
 import org.eclipse.che.workspace.infrastructure.openshift.provision.OpenShiftUniqueNamesProvisioner;
+import org.eclipse.che.workspace.infrastructure.openshift.provision.OpenshiftTrustedCAProvisioner;
 import org.eclipse.che.workspace.infrastructure.openshift.server.OpenShiftPreviewUrlExposer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +76,7 @@ public class OpenShiftEnvironmentProvisioner
   private final ImagePullSecretProvisioner imagePullSecretProvisioner;
   private final ProxySettingsProvisioner proxySettingsProvisioner;
   private final NodeSelectorProvisioner nodeSelectorProvisioner;
+  private final TolerationsProvisioner tolerationsProvisioner;
   private final AsyncStoragePodInterceptor asyncStoragePodInterceptor;
   private final ServiceAccountProvisioner serviceAccountProvisioner;
   private final AsyncStorageProvisioner asyncStorageProvisioner;
@@ -84,6 +87,7 @@ public class OpenShiftEnvironmentProvisioner
   private final VcsSslCertificateProvisioner vcsSslCertificateProvisioner;
   private final GatewayRouterProvisioner gatewayRouterProvisioner;
   private final DeploymentMetadataProvisioner deploymentMetadataProvisioner;
+  private final OpenshiftTrustedCAProvisioner trustedCAProvisioner;
 
   @Inject
   public OpenShiftEnvironmentProvisioner(
@@ -100,6 +104,7 @@ public class OpenShiftEnvironmentProvisioner
       ImagePullSecretProvisioner imagePullSecretProvisioner,
       ProxySettingsProvisioner proxySettingsProvisioner,
       NodeSelectorProvisioner nodeSelectorProvisioner,
+      TolerationsProvisioner tolerationsProvisioner,
       AsyncStorageProvisioner asyncStorageProvisioner,
       AsyncStoragePodInterceptor asyncStoragePodInterceptor,
       ServiceAccountProvisioner serviceAccountProvisioner,
@@ -109,7 +114,8 @@ public class OpenShiftEnvironmentProvisioner
       OpenShiftPreviewUrlExposer previewUrlEndpointsProvisioner,
       VcsSslCertificateProvisioner vcsSslCertificateProvisioner,
       GatewayRouterProvisioner gatewayRouterProvisioner,
-      DeploymentMetadataProvisioner deploymentMetadataProvisioner) {
+      DeploymentMetadataProvisioner deploymentMetadataProvisioner,
+      OpenshiftTrustedCAProvisioner trustedCAProvisioner) {
     this.pvcEnabled = pvcEnabled;
     this.volumesStrategy = volumesStrategy;
     this.uniqueNamesProvisioner = uniqueNamesProvisioner;
@@ -123,6 +129,7 @@ public class OpenShiftEnvironmentProvisioner
     this.imagePullSecretProvisioner = imagePullSecretProvisioner;
     this.proxySettingsProvisioner = proxySettingsProvisioner;
     this.nodeSelectorProvisioner = nodeSelectorProvisioner;
+    this.tolerationsProvisioner = tolerationsProvisioner;
     this.asyncStorageProvisioner = asyncStorageProvisioner;
     this.asyncStoragePodInterceptor = asyncStoragePodInterceptor;
     this.serviceAccountProvisioner = serviceAccountProvisioner;
@@ -133,6 +140,7 @@ public class OpenShiftEnvironmentProvisioner
     this.vcsSslCertificateProvisioner = vcsSslCertificateProvisioner;
     this.gatewayRouterProvisioner = gatewayRouterProvisioner;
     this.deploymentMetadataProvisioner = deploymentMetadataProvisioner;
+    this.trustedCAProvisioner = trustedCAProvisioner;
   }
 
   @Override
@@ -159,10 +167,10 @@ public class OpenShiftEnvironmentProvisioner
 
     // 3 stage - add OpenShift env items
     restartPolicyRewriter.provision(osEnv, identity);
-    uniqueNamesProvisioner.provision(osEnv, identity);
     routeTlsProvisioner.provision(osEnv, identity);
     resourceLimitRequestProvisioner.provision(osEnv, identity);
     nodeSelectorProvisioner.provision(osEnv, identity);
+    tolerationsProvisioner.provision(osEnv, identity);
     podTerminationGracePeriodProvisioner.provision(osEnv, identity);
     imagePullSecretProvisioner.provision(osEnv, identity);
     proxySettingsProvisioner.provision(osEnv, identity);
@@ -174,6 +182,8 @@ public class OpenShiftEnvironmentProvisioner
     gitConfigProvisioner.provision(osEnv, identity);
     gatewayRouterProvisioner.provision(osEnv, identity);
     deploymentMetadataProvisioner.provision(osEnv, identity);
+    trustedCAProvisioner.provision(osEnv, identity);
+    uniqueNamesProvisioner.provision(osEnv, identity);
     LOG.debug(
         "Provisioning OpenShift environment done for workspace '{}'", identity.getWorkspaceId());
   }

@@ -27,13 +27,15 @@ spec:
       labels:
         app: che
         component: che
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       securityContext:
         fsGroup: {{ .Values.global.securityContext.fsGroup }}
       initContainers:
 {{- if .Values.global.multiuser }}
       - name: wait-for-postgres
-        image: quay.io/eclipse/che-endpoint-watcher:nightly
+        image: {{ .Values.global.endpointWatcher.image }}
         env:
           - name: POD_NAMESPACE
             valueFrom:
@@ -45,7 +47,7 @@ spec:
 #wait for keycloak if in multiuser mode and .Values.customOidcProvider was not defined
 {{- if (and .Values.global.multiuser (not .Values.customOidcProvider)) }}
       - name: wait-for-keycloak
-        image: quay.io/eclipse/che-endpoint-watcher:nightly
+        image: {{ .Values.global.endpointWatcher.image }}
         env:
           - name: POD_NAMESPACE
             valueFrom:
@@ -107,7 +109,8 @@ spec:
 
         # If workspaces are created in a separate namespace(s)
         # then configure Che Server to propagate TLS secret to workspaces' namespaces
-        {{- if ne .Release.Namespace .Values.global.cheWorkspacesNamespace }}
+        # Do not propagate anything in case of using default ingress controller certificate (global.tls.secretName is empty)
+        {{- if and (ne .Release.Namespace .Values.global.cheWorkspacesNamespace) (.Values.global.tls.secretName) }}
         - name: "CHE_INFRA_KUBERNETES_TLS__CERT"
           valueFrom:
             secretKeyRef:

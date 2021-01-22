@@ -42,6 +42,8 @@ import static org.testng.AssertJUnit.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +55,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import org.eclipse.che.account.spi.AccountImpl;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
@@ -203,6 +207,13 @@ public class WorkspaceRuntimesTest {
     verify(infrastructure).prepare(runtimeIdCaptor.capture(), any());
     RuntimeIdentity runtimeId = runtimeIdCaptor.getValue();
     assertEquals(runtimeId.getInfrastructureNamespace(), "infraNamespace");
+    assertWorkspaceEventFired(
+        "workspace123",
+        WorkspaceStatus.STARTING,
+        WorkspaceStatus.STOPPED,
+        null,
+        true,
+        Collections.emptyMap());
   }
 
   @Test
@@ -336,16 +347,13 @@ public class WorkspaceRuntimesTest {
     }
     ;
     verify(statuses).remove("workspace123");
-    ArgumentCaptor<WorkspaceStatusEvent> captor =
-        ArgumentCaptor.forClass(WorkspaceStatusEvent.class);
-    verify(eventService).publish(captor.capture());
-    WorkspaceStatusEvent event = captor.getValue();
-    assertEquals("workspace123", event.getWorkspaceId());
-    assertEquals(WorkspaceStatus.STOPPING, event.getPrevStatus());
-    assertEquals(WorkspaceStatus.STOPPED, event.getStatus());
-    assertEquals(
+    assertWorkspaceEventFired(
+        "workspace123",
+        WorkspaceStatus.STOPPED,
+        WorkspaceStatus.STOPPING,
         "Workspace is stopped. Reason: InternalEnvironmentFactory is not configured for recipe type: 'UNKNOWN'",
-        event.getError());
+        false,
+        Collections.emptyMap());
     assertFalse(runtimesMap.containsKey("workspace123"));
   }
 
@@ -1017,6 +1025,25 @@ public class WorkspaceRuntimesTest {
         internalRuntime.getWarnings());
   }
 
+  private void assertWorkspaceEventFired(
+      String workspaceId,
+      WorkspaceStatus status,
+      WorkspaceStatus previous,
+      String errorMsg,
+      boolean isInitiatedByUser,
+      Map<String, String> options) {
+    ArgumentCaptor<WorkspaceStatusEvent> captor =
+        ArgumentCaptor.forClass(WorkspaceStatusEvent.class);
+    verify(eventService).publish(captor.capture());
+    WorkspaceStatusEvent event = captor.getValue();
+    assertEquals(event.getWorkspaceId(), workspaceId);
+    assertEquals(event.getStatus(), status);
+    assertEquals(event.getPrevStatus(), previous);
+    assertEquals(event.getError(), errorMsg);
+    assertEquals(event.isInitiatedByUser(), isInitiatedByUser);
+    assertEquals(event.getOptions(), options);
+  }
+
   private static class TestInfrastructure extends RuntimeInfrastructure {
 
     public TestInfrastructure() {
@@ -1045,6 +1072,12 @@ public class WorkspaceRuntimesTest {
 
     @Override
     public RuntimeContext internalPrepare(RuntimeIdentity id, InternalEnvironment environment) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Response sendDirectInfrastructureRequest(
+        String httpMethod, URI relativeUri, HttpHeaders headers, InputStream body) {
       throw new UnsupportedOperationException();
     }
   }

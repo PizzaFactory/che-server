@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import java.util.Arrays;
@@ -116,7 +117,9 @@ public class PodMergerTest {
             .withContainers(new ContainerBuilder().withName("c1").build())
             .withInitContainers(new ContainerBuilder().withName("initC1").build())
             .withVolumes(new VolumeBuilder().withName("v1").build())
+            .withNodeSelector(Map.of("foo1", "bar1"))
             .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret1").build())
+            .withTolerations(new Toleration("Effect", "key", "operator", 0L, "value1"))
             .build();
     podSpec1.setAdditionalProperty("add1", 1L);
     PodData podData1 = new PodData(podSpec1, new ObjectMetaBuilder().build());
@@ -126,7 +129,9 @@ public class PodMergerTest {
             .withContainers(new ContainerBuilder().withName("c2").build())
             .withInitContainers(new ContainerBuilder().withName("initC2").build())
             .withVolumes(new VolumeBuilder().withName("v2").build())
+            .withNodeSelector(Map.of("foo2", "bar2"))
             .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("secret2").build())
+            .withTolerations(new Toleration("Effect", "key", "operator", 0L, "value2"))
             .build();
     podSpec2.setAdditionalProperty("add2", 2L);
     PodData podData2 = new PodData(podSpec2, new ObjectMetaBuilder().build());
@@ -440,9 +445,12 @@ public class PodMergerTest {
     assertTrue(source.getVolumes().containsAll(toCheck.getVolumes()));
     assertTrue(source.getImagePullSecrets().containsAll(toCheck.getImagePullSecrets()));
     assertTrue(
+        source.getNodeSelector().entrySet().containsAll(toCheck.getNodeSelector().entrySet()));
+    assertTrue(
         source
             .getAdditionalProperties()
             .entrySet()
             .containsAll(toCheck.getAdditionalProperties().entrySet()));
+    assertTrue(source.getTolerations().containsAll(toCheck.getTolerations()));
   }
 }

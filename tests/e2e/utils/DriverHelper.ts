@@ -32,6 +32,12 @@ export class DriverHelper {
         return this.driver.actions();
     }
 
+    public async maximize() {
+        Logger.trace(`DriverHelper.maximize`);
+
+        await this.driver.manage().window().maximize();
+    }
+
     public async isVisible(locator: By): Promise<boolean> {
         Logger.trace(`DriverHelper.isVisible ${locator}`);
 
@@ -143,7 +149,7 @@ export class DriverHelper {
             }
         }
 
-        throw new error.TimeoutError(`Exceeded maximum visibility checkings attempts, problems with 'StaleElementReferenceError' of '${elementLocator}' element`);
+        throw new error.TimeoutError(`Exceeded maximum visibility checkings attempts for '${elementLocator}' element, timeouted after ${timeout}`);
     }
 
     public async waitPresence(elementLocator: By, timeout: number = TimeoutConstants.TS_SELENIUM_CLICK_ON_VISIBLE_ITEM): Promise<WebElement> {
