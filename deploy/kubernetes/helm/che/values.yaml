@@ -16,6 +16,11 @@
 cheWorkspaceHttpProxy: ""
 cheWorkspaceHttpsProxy: ""
 cheWorkspaceNoProxy: ""
+#cheWorkspacePodTolerations:
+#  - key: "a.node.taint"
+#    operator: "Equal"
+#    value: "aValue"
+#    effect: "NoExecute"
 cheImage: quay.io/eclipse/che-server:nightly
 cheImagePullPolicy: Always
 cheKeycloakRealm: "che"
@@ -44,6 +49,11 @@ global:
   singleHostGatewayLabels: app=che,component=che-gateway-config
   # Public hostname of the installed Che server. If value is omitted then it will be automatically set.
   cheHost: ""
+  # Image used by endpoint watchers
+  endpointWatcher:
+    image: quay.io/eclipse/che-endpoint-watcher:nightly
+  # Use internal cluster svc names to communicate between components
+  useInternalClusterSVCNames: true
 
   ## Allows to enable and configure TLS
   tls:
@@ -51,6 +61,7 @@ global:
     ## Secret name that will be used in Che Ingresses for setting TLS up
     ## Note the helm chart does not create this secret and
     ## it MUST be pre-created in the configured Che namespace
+    ## If the value is empty, then the certificate from default ingress controller will be used.
     secretName: che-tls
 
     ## If self-signed certificate flag is enabled
@@ -58,7 +69,8 @@ global:
     useSelfSignedCerts: true
     selfSignedCertSecretName: self-signed-certificate
 
-    ## Name of the config-map with public certificates to add to Java trust store of the Che server.
+    ## Name of the config-map with public certificates to add to Java trust store
+    ## of the Che server, Keycloak and propagate into user workspaces.
     serverTrustStoreConfigMapName: ""
 
 
@@ -104,7 +116,12 @@ global:
   chePluginRegistryUrlFormat: "plugin-registry-%s.%s"
 
 che:
+  limits: {
+    # userWorkspacesRunCount
+  }
   workspace: {}
+    # This variable may contain a set of comma-separated key=value pairs to form the nodeSelector rule
+#    podNodeSelector: "key1=value1,key2=value2"
 #    devfileRegistryUrl: "https://che-devfile-registry.openshift.io/"
 #    pluginBroker:
 #      waitTimeoutMin: "3"
@@ -113,7 +130,7 @@ che:
   logLevel: "INFO"
 
 dashboard:
-  image: quay.io/eclipse/che-dashboard:next
+  image: quay.io/eclipse/che-dashboard:next-react
   imagePullPolicy: "Always"
   memoryRequest: 16Mi
   memoryLimit: 256Mi

@@ -13,9 +13,11 @@ package org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
-import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.FileSecretApplier.ANNOTATION_MOUNT_PATH;
-import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretApplier.ANNOTATION_AUTOMOUNT;
-import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.SecretAsContainerResourceProvisioner.ANNOTATION_MOUNT_AS;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.GitConfigProvisioner.GIT_CONFIG_MAP_NAME;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretAnnotationNames.ANNOTATION_AUTOMOUNT;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretAnnotationNames.ANNOTATION_GIT_CREDENTIALS;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretAnnotationNames.ANNOTATION_MOUNT_AS;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretAnnotationNames.ANNOTATION_MOUNT_PATH;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertTrue;
@@ -64,7 +66,7 @@ public class GitCredentialStorageFileSecretApplierTest {
     when(environment.getPodsData()).thenReturn(singletonMap("pod1", podData));
     when(podData.getRole()).thenReturn(KubernetesEnvironment.PodRole.DEPLOYMENT);
     when(podData.getSpec()).thenReturn(podSpec);
-    when(runtimeIdentity.getWorkspaceId()).thenReturn("ws-1234598");
+    lenient().when(runtimeIdentity.getWorkspaceId()).thenReturn("ws-1234598");
   }
 
   @Test(
@@ -86,7 +88,7 @@ public class GitCredentialStorageFileSecretApplierTest {
                             "file",
                             ANNOTATION_MOUNT_PATH,
                             "/home/user/.git",
-                            GitCredentialStorageFileSecretApplier.ANNOTATION_GIT_CREDENTIALS,
+                            ANNOTATION_GIT_CREDENTIALS,
                             "true",
                             ANNOTATION_AUTOMOUNT,
                             "true"))
@@ -112,7 +114,7 @@ public class GitCredentialStorageFileSecretApplierTest {
                             "file",
                             ANNOTATION_MOUNT_PATH,
                             "/home/user/.git",
-                            GitCredentialStorageFileSecretApplier.ANNOTATION_GIT_CREDENTIALS,
+                            ANNOTATION_GIT_CREDENTIALS,
                             "true",
                             ANNOTATION_AUTOMOUNT,
                             "true"))
@@ -124,10 +126,7 @@ public class GitCredentialStorageFileSecretApplierTest {
         new ConfigMapBuilder()
             .withData(ImmutableMap.of(GitConfigProvisioner.GIT_CONFIG, GIT_CONFIG_CONTENT))
             .build();
-    when(environment.getConfigMaps())
-        .thenReturn(
-            ImmutableMap.of(
-                "ws-1234598" + GitConfigProvisioner.GIT_CONFIG_MAP_NAME_SUFFIX, configMap));
+    when(environment.getConfigMaps()).thenReturn(ImmutableMap.of(GIT_CONFIG_MAP_NAME, configMap));
     // when
     secretApplier.applySecret(environment, runtimeIdentity, secret);
     // then
@@ -156,7 +155,7 @@ public class GitCredentialStorageFileSecretApplierTest {
                             "file",
                             ANNOTATION_MOUNT_PATH,
                             "/home/user/.git",
-                            GitCredentialStorageFileSecretApplier.ANNOTATION_GIT_CREDENTIALS,
+                            ANNOTATION_GIT_CREDENTIALS,
                             "true",
                             ANNOTATION_AUTOMOUNT,
                             "true"))
@@ -172,10 +171,7 @@ public class GitCredentialStorageFileSecretApplierTest {
                     GIT_CONFIG_CONTENT
                         + "[credential]\n\thelper = store --file /home/user/.git/credentials\n"))
             .build();
-    when(environment.getConfigMaps())
-        .thenReturn(
-            ImmutableMap.of(
-                "ws-1234598" + GitConfigProvisioner.GIT_CONFIG_MAP_NAME_SUFFIX, configMap));
+    when(environment.getConfigMaps()).thenReturn(ImmutableMap.of(GIT_CONFIG_MAP_NAME, configMap));
     // when
     secretApplier.applySecret(environment, runtimeIdentity, secret);
   }

@@ -30,31 +30,21 @@ import static org.eclipse.che.multiuser.keycloak.shared.KeycloakConstants.USERNA
 import static org.eclipse.che.multiuser.keycloak.shared.KeycloakConstants.USE_FIXED_REDIRECT_URLS_SETTING;
 import static org.eclipse.che.multiuser.keycloak.shared.KeycloakConstants.USE_NONCE_SETTING;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.eclipse.che.commons.annotation.Nullable;
-import org.eclipse.che.commons.proxy.ProxyAuthenticator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** @author Max Shaposhnik (mshaposh@redhat.com) */
 @Singleton
 public class KeycloakSettings {
-  private static final Logger LOG = LoggerFactory.getLogger(KeycloakSettings.class);
-  private static final String DEFAULT_USERNAME_CLAIM = "preferred_username";
+  protected static final String DEFAULT_USERNAME_CLAIM = "preferred_username";
 
   private final Map<String, String> settings;
+  private final String oidcProviderUrl;
 
   @Inject
   public KeycloakSettings(
@@ -63,56 +53,21 @@ public class KeycloakSettings {
       @Nullable @Named(AUTH_SERVER_URL_SETTING) String serverURL,
       @Nullable @Named(REALM_SETTING) String realm,
       @Named(CLIENT_ID_SETTING) String clientId,
-      @Nullable @Named(OIDC_PROVIDER_SETTING) String oidcProvider,
+      @Nullable @Named(OIDC_PROVIDER_SETTING) String oidcProviderUrl,
       @Nullable @Named(USERNAME_CLAIM_SETTING) String usernameClaim,
       @Named(USE_NONCE_SETTING) boolean useNonce,
       @Nullable @Named(OSO_ENDPOINT_SETTING) String osoEndpoint,
       @Nullable @Named(GITHUB_ENDPOINT_SETTING) String gitHubEndpoint,
-      @Named(USE_FIXED_REDIRECT_URLS_SETTING) boolean useFixedRedirectUrls) {
-
-    if (serverURL == null && oidcProvider == null) {
-      throw new RuntimeException(
-          "Either the '"
-              + AUTH_SERVER_URL_SETTING
-              + "' or '"
-              + OIDC_PROVIDER_SETTING
-              + "' property should be set");
-    }
-
-    if (oidcProvider == null && realm == null) {
-      throw new RuntimeException("The '" + REALM_SETTING + "' property should be set");
-    }
-
-    String wellKnownEndpoint = oidcProvider != null ? oidcProvider : serverURL + "/realms/" + realm;
-    if (!wellKnownEndpoint.endsWith("/")) {
-      wellKnownEndpoint = wellKnownEndpoint + "/";
-    }
-    wellKnownEndpoint += ".well-known/openid-configuration";
-
-    LOG.info("Retrieving OpenId configuration from endpoint: {}", wellKnownEndpoint);
-
-    Map<String, Object> openIdConfiguration;
-    ProxyAuthenticator.initAuthenticator(wellKnownEndpoint);
-    try (InputStream inputStream = new URL(wellKnownEndpoint).openStream()) {
-      final JsonFactory factory = new JsonFactory();
-      final JsonParser parser = factory.createParser(inputStream);
-      final TypeReference<Map<String, Object>> typeReference =
-          new TypeReference<Map<String, Object>>() {};
-      openIdConfiguration = new ObjectMapper().reader().readValue(parser, typeReference);
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Exception while retrieving OpenId configuration from endpoint: " + wellKnownEndpoint, e);
-    } finally {
-      ProxyAuthenticator.resetAuthenticator();
-    }
-
-    LOG.info("openid configuration = {}", openIdConfiguration);
+      @Named(USE_FIXED_REDIRECT_URLS_SETTING) boolean useFixedRedirectUrls,
+      OIDCInfo oidcInfo) {
+    this.oidcProviderUrl = oidcProviderUrl;
 
     Map<String, String> settings = Maps.newHashMap();
     settings.put(
         USERNAME_CLAIM_SETTING, usernameClaim == null ? DEFAULT_USERNAME_CLAIM : usernameClaim);
     settings.put(CLIENT_ID_SETTING, clientId);
     settings.put(REALM_SETTING, realm);
+
     if (serverURL != null) {
       settings.put(AUTH_SERVER_URL_SETTING, serverURL);
       settings.put(PROFILE_ENDPOINT_SETTING, serverURL + "/realms/" + realm + "/account");
@@ -124,27 +79,38 @@ public class KeycloakSettings {
           TOKEN_ENDPOINT_SETTING,
           serverURL + "/realms/" + realm + "/protocol/openid-connect/token");
     }
-    String endSessionEndpoint = (String) openIdConfiguration.get("end_session_endpoint");
-    if (endSessionEndpoint != null) {
-      settings.put(LOGOUT_ENDPOINT_SETTING, endSessionEndpoint);
+
+    if (oidcInfo.getEndSessionPublicEndpoint() != null) {
+      settings.put(LOGOUT_ENDPOINT_SETTING, oidcInfo.getEndSessionPublicEndpoint());
     }
-    String tokenEndpoint = (String) openIdConfiguration.get("token_endpoint");
-    if (tokenEndpoint != null) {
-      settings.put(TOKEN_ENDPOINT_SETTING, tokenEndpoint);
+    if (oidcInfo.getTokenPublicEndpoint() != null) {
+      settings.put(TOKEN_ENDPOINT_SETTING, oidcInfo.getTokenPublicEndpoint());
     }
-    String userInfoEndpoint = (String) openIdConfiguration.get("userinfo_endpoint");
-    if (userInfoEndpoint != null) {
-      settings.put(USERINFO_ENDPOINT_SETTING, userInfoEndpoint);
+    if (oidcInfo.getUserInfoPublicEndpoint() != null) {
+      settings.put(USERINFO_ENDPOINT_SETTING, oidcInfo.getUserInfoPublicEndpoint());
     }
-    String jwksUriEndpoint = (String) openIdConfiguration.get("jwks_uri");
-    if (jwksUriEndpoint != null) {
-      settings.put(JWKS_ENDPOINT_SETTING, jwksUriEndpoint);
+    if (oidcInfo.getJwksPublicUri() != null) {
+      settings.put(JWKS_ENDPOINT_SETTING, oidcInfo.getJwksPublicUri());
     }
+
     settings.put(OSO_ENDPOINT_SETTING, osoEndpoint);
     settings.put(GITHUB_ENDPOINT_SETTING, gitHubEndpoint);
 
-    if (oidcProvider != null) {
-      settings.put(OIDC_PROVIDER_SETTING, oidcProvider);
+    this.setUpKeycloakJSAdaptersURLS(
+        settings, useNonce, useFixedRedirectUrls, jsAdapterUrl, cheServerEndpoint, serverURL);
+
+    this.settings = Collections.unmodifiableMap(settings);
+  }
+
+  private void setUpKeycloakJSAdaptersURLS(
+      Map<String, String> settings,
+      boolean useNonce,
+      boolean useFixedRedirectUrls,
+      String jsAdapterUrl,
+      String cheServerEndpoint,
+      String serverURL) {
+    if (oidcProviderUrl != null) {
+      settings.put(OIDC_PROVIDER_SETTING, oidcProviderUrl);
       if (useFixedRedirectUrls) {
         String rootUrl =
             cheServerEndpoint.endsWith("/") ? cheServerEndpoint : cheServerEndpoint + "/";
@@ -153,16 +119,23 @@ public class KeycloakSettings {
         settings.put(FIXED_REDIRECT_URL_FOR_IDE, rootUrl + "keycloak/oidcCallbackIde.html");
       }
     }
+
     settings.put(USE_NONCE_SETTING, Boolean.toString(useNonce));
+
     if (jsAdapterUrl == null) {
       jsAdapterUrl =
-          (oidcProvider != null) ? "/api/keycloak/OIDCKeycloak.js" : serverURL + "/js/keycloak.js";
+          (oidcProviderUrl != null)
+              ? "/api/keycloak/OIDCKeycloak.js"
+              : serverURL + "/js/keycloak.js";
     }
     settings.put(JS_ADAPTER_URL_SETTING, jsAdapterUrl);
-
-    this.settings = Collections.unmodifiableMap(settings);
   }
 
+  /**
+   * Public Keycloak connection settings. It contains information about keycloak api urls and
+   * information required to make Keycloak connection using public domain hostname. This info will
+   * be shared with frontend.
+   */
   public Map<String, String> get() {
     return settings;
   }

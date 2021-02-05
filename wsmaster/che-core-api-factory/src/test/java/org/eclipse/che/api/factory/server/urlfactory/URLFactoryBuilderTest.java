@@ -14,7 +14,6 @@ package org.eclipse.che.api.factory.server.urlfactory;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static org.eclipse.che.api.factory.shared.Constants.CURRENT_VERSION;
 import static org.eclipse.che.api.workspace.server.devfile.Constants.KUBERNETES_COMPONENT_TYPE;
 import static org.eclipse.che.api.workspace.shared.Constants.WORKSPACE_TOOLING_EDITOR_ATTRIBUTE;
 import static org.eclipse.che.api.workspace.shared.Constants.WORKSPACE_TOOLING_PLUGINS_ATTRIBUTE;
@@ -46,7 +45,6 @@ import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.devfile.DevfileImpl;
 import org.eclipse.che.api.workspace.server.model.impl.devfile.MetadataImpl;
 import org.eclipse.che.api.workspace.shared.dto.WorkspaceConfigDto;
-import org.eclipse.che.dto.server.DtoFactory;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeClass;
@@ -75,8 +73,7 @@ public class URLFactoryBuilderTest {
 
   @BeforeClass
   public void setUp() {
-    this.urlFactoryBuilder =
-        new URLFactoryBuilder(defaultEditor, defaultPlugin, urlFetcher, devfileParser);
+    this.urlFactoryBuilder = new URLFactoryBuilder(defaultEditor, defaultPlugin, devfileParser);
   }
 
   @Test
@@ -91,32 +88,6 @@ public class URLFactoryBuilderTest {
     WorkspaceConfigDto actualWsConfigDto = urlFactoryBuilder.buildDefaultWorkspaceConfig("foo");
 
     assertEquals(actualWsConfigDto, expectedWsConfig);
-  }
-
-  /** Check that with a custom factory.json we've this factory being built */
-  @Test
-  public void checkWithCustomFactoryJsonFile() throws Exception {
-
-    WorkspaceConfigDto workspaceConfigDto = newDto(WorkspaceConfigDto.class);
-    FactoryDto templateFactory =
-        newDto(FactoryDto.class)
-            .withV(CURRENT_VERSION)
-            .withName("florent")
-            .withWorkspace(workspaceConfigDto);
-    String jsonFactory = DtoFactory.getInstance().toJson(templateFactory);
-
-    String myLocation = "http://foo-location";
-    when(urlFetcher.fetchSafely(myLocation)).thenReturn(jsonFactory);
-
-    FactoryDto factory =
-        urlFactoryBuilder
-            .createFactoryFromJson(
-                new DefaultFactoryUrl()
-                    .withFactoryFileLocation(myLocation)
-                    .withFactoryFilename(".factory.json"))
-            .get();
-
-    assertEquals(templateFactory.withSource(".factory.json"), factory);
   }
 
   @Test
@@ -193,7 +164,7 @@ public class URLFactoryBuilderTest {
                   }
                 }));
     when(devfileParser.parseYaml(anyString(), anyMap())).thenReturn(devfile);
-    when(urlFetcher.fetchSafely(anyString())).thenReturn("anything");
+    when(fileContentProvider.fetchContent(anyString())).thenReturn("anything");
     FactoryDto factory =
         urlFactoryBuilder
             .createFactoryFromDevfile(defaultFactoryUrl, fileContentProvider, emptyMap())

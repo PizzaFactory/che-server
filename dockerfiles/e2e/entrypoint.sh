@@ -8,7 +8,6 @@ kill_ffmpeg(){
   wait "$ffmpeg_pid"
   mkdir -p /tmp/e2e/report/
   cp /tmp/ffmpeg_report/* /tmp/e2e/report/
-  exit $EXIT_CODE
 }
 
 set -x
@@ -26,7 +25,7 @@ fi
 
 # Launch display mode and VNC server
 export DISPLAY=':20'
-Xvfb :20 -screen 0 1920x1080x16 > /dev/null 2>&1 &
+Xvfb :20 -screen 0 1920x1080x24 > /dev/null 2>&1 &
 x11vnc -display :20 -N -forever > /dev/null 2>&1 &
 echo ''
 echo '#######################'
@@ -86,7 +85,7 @@ if [ $TEST_SUITE == "load-test" ]; then
   echo "Tarring files and sending them via FTP..."
   tar -cf $user_folder.tar ./$user_folder
 
-  ftp -n load-tests-ftp-service << End_script 
+  ftp -vn load-tests-ftp-service << End_script 
   user user pass1234
   binary
   put $user_folder.tar
@@ -95,13 +94,20 @@ End_script
   
   echo "Files sent to load-tests-ftp-service."
 else
-  mkdir -p /tmp/ffmpeg_report
-  nohup ffmpeg -y -video_size 1920x1080 -framerate 24 -f x11grab -i :20.0 /tmp/ffmpeg_report/output.mp4 2> /tmp/ffmpeg_report/ffmpeg_err.txt > /tmp/ffmpeg_report/ffmpeg_std.txt & 
-  ffmpeg_pid=$!
-  trap kill_ffmpeg 2 15
+  SCREEN_RECORDING=${VIDEO_RECORDING:-true}
+  if [ "${SCREEN_RECORDING}" == "true" ]; then
+    echo "Starting ffmpeg recording..."
+    mkdir -p /tmp/ffmpeg_report
+    nohup ffmpeg -y -video_size 1920x1080 -framerate 24 -f x11grab -i :20.0 /tmp/ffmpeg_report/output.mp4 2> /tmp/ffmpeg_report/ffmpeg_err.txt > /tmp/ffmpeg_report/ffmpeg_std.txt & 
+    ffmpeg_pid=$!
+    trap kill_ffmpeg 2 15
+  fi
 
   echo "Running TEST_SUITE: $TEST_SUITE with user: $TS_SELENIUM_USERNAME"
   npm run $TEST_SUITE
   EXIT_CODE=$?
-  kill_ffmpeg
+  if [ "${SCREEN_RECORDING}" == "true" ]; then
+    kill_ffmpeg
+  fi
+  exit $EXIT_CODE
 fi

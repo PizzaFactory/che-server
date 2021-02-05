@@ -12,7 +12,7 @@
 package org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret;
 
 import static java.lang.String.format;
-import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.SecretAsContainerResourceProvisioner.ANNOTATION_PREFIX;
+import static org.eclipse.che.workspace.infrastructure.kubernetes.provision.secret.KubernetesSecretAnnotationNames.ANNOTATION_MOUNT_PATH;
 
 import com.google.common.annotations.Beta;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -40,9 +40,6 @@ import org.eclipse.che.workspace.infrastructure.kubernetes.provision.GitConfigPr
 @Singleton
 public class GitCredentialStorageFileSecretApplier extends FileSecretApplier {
 
-  public static final String ANNOTATION_GIT_CREDENTIALS =
-      ANNOTATION_PREFIX + "/" + "git-credential";
-
   private static final String GIT_CREDENTIALS_FILE_STORE_PATTERN =
       "\n[credential]\n\thelper = store --file %s\n";
 
@@ -64,10 +61,7 @@ public class GitCredentialStorageFileSecretApplier extends FileSecretApplier {
               keys.size()));
     }
     Path gitSecretFilePath = Paths.get(secretMountPath, keys.iterator().next());
-    ConfigMap gitConfigMap =
-        env.getConfigMaps()
-            .get(
-                runtimeIdentity.getWorkspaceId() + GitConfigProvisioner.GIT_CONFIG_MAP_NAME_SUFFIX);
+    ConfigMap gitConfigMap = env.getConfigMaps().get(GitConfigProvisioner.GIT_CONFIG_MAP_NAME);
     if (gitConfigMap != null) {
       Map<String, String> gitConfigMapData = gitConfigMap.getData();
       String gitConfig = gitConfigMapData.get(GitConfigProvisioner.GIT_CONFIG);

@@ -32,7 +32,7 @@ spec:
     spec:
       initContainers:
       - name: wait-for-postgres
-        image: quay.io/eclipse/che-endpoint-watcher:nightly
+        image: {{ .Values.global.endpointWatcher.image }}
         env:
           - name: POD_NAMESPACE
             valueFrom:
@@ -54,12 +54,29 @@ spec:
           value: keycloak
         - name: DB_PASSWORD
           value: keycloak
+{{- if .Values.keycloakCredentialsSecret }}
         - name: KEYCLOAK_USER
-          value: {{ .Values.keycloakAdminUserName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.keycloakCredentialsSecret }}
+              key: user
         - name: KEYCLOAK_PASSWORD
-          value: {{ .Values.keycloakAdminUserPassword }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.keycloakCredentialsSecret }}
+              key: password
+{{- else }}
+        - name: KEYCLOAK_USER
+          value: {{ .Values.keycloakAdminUserName | default "admin" }}
+        - name: KEYCLOAK_PASSWORD
+          value: {{ required "keycloakAdminUserPassword cannot be empty" (.Values.keycloakAdminUserPassword | trim) }}
+{{- end }}
         - name: CHE_HOST
           value: {{ template "cheHost" . }}
+{{- if .Values.global.useInternalClusterSVCNames }}
+        - name: KEYCLOAK_HOSTNAME
+          value: {{ template "keycloakHost" . }}
+{{- end }}
         - name: ROUTING_SUFFIX
           value: {{ .Values.global.ingressDomain }}
         - name: NAMESPACE
@@ -69,10 +86,14 @@ spec:
         - name: PROTOCOL
 {{- if .Values.global.tls.enabled }}
           value: "https"
+        - name: KEYCLOAK_HTTPS_PORT
+          value: "443"
         - name: PROXY_ADDRESS_FORWARDING
           value: "true"
 {{- else }}
           value: "http"
+        - name: KEYCLOAK_HTTP_PORT
+          value: "80"
 {{- end }}
 
         image: {{ .Values.image }}
@@ -109,6 +130,10 @@ spec:
           name: keycloak-data
         - mountPath: /opt/jboss/keycloak/standalone/log
           name: keycloak-log
+{{- if not (eq .Values.global.tls.serverTrustStoreConfigMapName "") }}
+        - mountPath: /public-certs
+          name: che-public-certs
+{{- end }}
       restartPolicy: Always
       securityContext:
         # `fsGroup`, `runAsGroup`, and `runAsUser` must be
@@ -125,4 +150,9 @@ spec:
       - name: keycloak-log
         persistentVolumeClaim:
           claimName: keycloak-log
+{{- if not (eq .Values.global.tls.serverTrustStoreConfigMapName "") }}
+      - name: che-public-certs
+        configMap:
+          name: {{ .Values.global.tls.serverTrustStoreConfigMapName }}
+{{- end }}
 status: {}

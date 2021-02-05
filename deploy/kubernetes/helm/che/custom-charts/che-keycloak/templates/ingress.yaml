@@ -13,6 +13,9 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: keycloak-ingress
+  labels:
+    app: che
+    component: keycloak
   annotations:
     kubernetes.io/ingress.class: {{ .Values.global.ingress.class | quote }}
     {{ .Values.global.ingressAnnotationsPrefix }}ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -27,7 +30,9 @@ spec:
   tls:
   - hosts:
     - {{ template "keycloakHost" . }}
+    {{- if .Values.global.tls.secretName }}
     secretName: {{ .Values.global.tls.secretName }}
+    {{- end -}}
 {{- end }}
   rules:
 {{- if eq .Values.global.serverStrategy "default-host" }}
