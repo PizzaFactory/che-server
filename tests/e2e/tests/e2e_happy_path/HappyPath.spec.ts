@@ -17,7 +17,6 @@ import { TopMenu } from '../../pageobjects/ide/TopMenu';
 import { Editor } from '../../pageobjects/ide/Editor';
 import { PreviewWidget } from '../../pageobjects/ide/PreviewWidget';
 import { TestConstants } from '../../TestConstants';
-import { LeftToolbar } from '../../pageobjects/ide/LeftToolBar';
 import { By, Key, error } from 'selenium-webdriver';
 import { DebugView } from '../../pageobjects/ide/DebugView';
 import { DialogWindow } from '../../pageobjects/ide/DialogWindow';
@@ -29,6 +28,8 @@ import * as projectAndFileTests from '../../testsLibrary/ProjectAndFileTests';
 import { Workspaces } from '../../pageobjects/dashboard/Workspaces';
 import { Dashboard } from '../../pageobjects/dashboard/Dashboard';
 import { TimeoutConstants } from '../../TimeoutConstants';
+import { Logger } from '../../utils/Logger';
+import { RightToolBar } from '../../pageobjects/ide/RightToolBar';
 
 const driverHelper: DriverHelper = e2eContainer.get(CLASSES.DriverHelper);
 const ide: Ide = e2eContainer.get(CLASSES.Ide);
@@ -38,7 +39,7 @@ const editor: Editor = e2eContainer.get(CLASSES.Editor);
 const contextMenu: ContextMenu = e2eContainer.get(CLASSES.ContextMenu);
 const previewWidget: PreviewWidget = e2eContainer.get(CLASSES.PreviewWidget);
 const workspaces: Workspaces = e2eContainer.get(CLASSES.Workspaces);
-const leftToolbar: LeftToolbar = e2eContainer.get(CLASSES.LeftToolbar);
+const rightToolBar: RightToolBar = e2eContainer.get(CLASSES.RightToolBar);
 const dashboard: Dashboard = e2eContainer.get(CLASSES.Dashboard);
 const terminal: Terminal = e2eContainer.get(CLASSES.Terminal);
 const debugView: DebugView = e2eContainer.get(CLASSES.DebugView);
@@ -106,18 +107,31 @@ suite('Language server validation', async () => {
         await checkJavaPathCompletion();
     });
 
-    test('Error highlighting', async () => {
-        await editor.type(javaFileName, 'error', 30);
-        await editor.waitErrorInLine(30, TimeoutConstants.TS_ERROR_HIGHLIGHTING_TIMEOUT * 3);
-        await editor.performKeyCombination(javaFileName, Key.chord(Key.BACK_SPACE, Key.BACK_SPACE, Key.BACK_SPACE, Key.BACK_SPACE, Key.BACK_SPACE));
-        await editor.waitErrorInLineDisappearance(30);
-    });
-
     test('Autocomplete', async () => {
         await editor.moveCursorToLineAndChar(javaFileName, 32, 17);
         await editor.pressControlSpaceCombination(javaFileName);
         await editor.waitSuggestionContainer();
         await editor.waitSuggestion(javaFileName, 'SpringApplication - org.springframework.boot');
+    });
+
+    test('Error highlighting', async () => {
+        await driverHelper.getDriver().sleep(TimeoutConstants.TS_SUGGESTION_TIMEOUT);   // workaround https://github.com/eclipse/che/issues/19004
+
+        const textForErrorDisplaying: string = '$';
+        await editor.type(javaFileName, textForErrorDisplaying, 30);
+
+        try {
+            await editor.waitErrorInLine(30, TimeoutConstants.TS_ERROR_HIGHLIGHTING_TIMEOUT);
+        } catch (err) {
+            Logger.debug('Workaround for the https://github.com/eclipse/che/issues/18974.');
+            await driverHelper.reloadPage();
+            await ide.waitAndSwitchToIdeFrame();
+            await ide.waitIde();
+            await editor.waitErrorInLine(30, TimeoutConstants.TS_ERROR_HIGHLIGHTING_TIMEOUT * 2);
+        }
+
+        await editor.performKeyCombination(javaFileName, Key.chord(Key.BACK_SPACE));
+        await editor.waitErrorInLineDisappearance(30);
     });
 
     test('Suggestion', async () => {
@@ -156,10 +170,6 @@ suite('Validation of workspace build and run', async () => {
     test('Build application', async () => {
         let buildTaskName: string = 'build-file-output';
         await topMenu.runTask('build-file-output');
-
-        // workaround for issue: https://github.com/eclipse/che/issues/14771
-
-        // await projectTree.expandPathAndOpenFileInAssociatedWorkspace(projectName, 'build-output.txt');
         await terminal.waitIconSuccess(buildTaskName, 250_000);
     });
 
@@ -176,7 +186,7 @@ suite('Validation of workspace build and run', async () => {
     });
 
     test('Close preview widget', async () => {
-        await leftToolbar.clickOnToolIcon('Preview');
+        await rightToolBar.clickOnToolIcon('Preview');
         await previewWidget.waitPreviewWidgetAbsence();
 
     });
@@ -224,7 +234,7 @@ suite('Display source code changes in the running application', async () => {
     });
 
     test('Close preview widget', async () => {
-        await leftToolbar.clickOnToolIcon('Preview');
+        await rightToolBar.clickOnToolIcon('Preview');
         await previewWidget.waitPreviewWidgetAbsence();
     });
 
@@ -237,11 +247,6 @@ suite('Display source code changes in the running application', async () => {
 
 suite('Validation of debug functionality', async () => {
     let applicationUrl: string = '';
-
-    test('Open file and activate breakpoint', async () => {
-        await projectTree.expandPathAndOpenFile(pathToJavaFolder + '/system', weclomeControllerJavaFileName);
-        await editor.activateBreakpoint(weclomeControllerJavaFileName, 27);
-    });
 
     test('Launch debug', async () => {
         await topMenu.runTask('run-debug');
@@ -260,13 +265,26 @@ suite('Validation of debug functionality', async () => {
 
 
     test('Run debug and check application stop in the breakpoint', async () => {
+        await projectTree.expandPathAndOpenFile(pathToJavaFolder + '/system', weclomeControllerJavaFileName);
         await editor.selectTab(weclomeControllerJavaFileName);
         await topMenu.selectOption('View', 'Debug');
         await ide.waitLeftToolbarButton(LeftToolbarButton.Debug);
         await debugView.clickOnDebugConfigurationDropDown();
         await debugView.clickOnDebugConfigurationItem('Debug (Attach) - Remote');
         await debugView.clickOnRunDebugButton();
-        await debugView.waitForDebuggerToConnect();
+
+        try {
+            await debugView.waitForDebuggerToConnect();
+        } catch (err) {
+            Logger.debug('Workaround for the https://github.com/eclipse/che/issues/18034 issue.');
+            await debugView.clickOnThreadsViewTitle();
+
+            await debugView.waitForDebuggerToConnect();
+        }
+
+        await editor.selectTab(weclomeControllerJavaFileName);
+        await editor.activateBreakpoint(weclomeControllerJavaFileName, 27);
+
         await previewWidget.refreshPage();
         try {
             await editor.waitStoppedDebugBreakpoint(weclomeControllerJavaFileName, 27);

@@ -9,8 +9,9 @@
  **********************************************************************/
 import { inject, injectable } from 'inversify';
 import { CLASSES } from '../../inversify.types';
+import { TestConstants } from '../../TestConstants';
 import { DriverHelper } from '../../utils/DriverHelper';
-import { By, Key, WebElement } from 'selenium-webdriver';
+import { By, Key, WebElement, error } from 'selenium-webdriver';
 import { Ide } from './Ide';
 import { Logger } from '../../utils/Logger';
 import { TimeoutConstants } from '../../TimeoutConstants';
@@ -52,12 +53,33 @@ export class DebugView {
     async waitForDebuggerToConnect(timeout: number = TimeoutConstants.TS_DEBUGGER_CONNECTION_TIMEOUT) {
         await this.driverHelper.getDriver().wait(async () => {
             Logger.debug(`Waiting for debugger to connect (threads to appear in "Threads" view)`);
-            const threadElements: WebElement[] = await this.driverHelper.getDriver().findElements(By.xpath(`//div[contains(@class, 'theia-debug-thread')]`));
-            if (threadElements.length > 1) {
-                return true;
+
+            const threadsTreeLocator = `//div[contains(@class, 'theia-debug-thread')]`;
+
+            try {
+                const threadElements: WebElement[] = await this.driverHelper.waitAllPresence(By.xpath(threadsTreeLocator));
+                if (threadElements.length > 1) {
+                    return true;
+                }
+
+            } catch (err) {
+                if (!(err instanceof error.TimeoutError)) {
+                    throw err;
+                }
+
+                return await this.driverHelper.wait(TestConstants.TS_SELENIUM_DEFAULT_POLLING);
             }
-            return false;
         }, timeout);
+    }
+
+    /**
+     * Click on "Threads" view title.
+     */
+    async clickOnThreadsViewTitle() {
+        Logger.debug(`Click on "Threads" view title`);
+
+        const threadsViewTitleLocator: By = By.xpath('//div[@id="debug:view-container:-1--debug:threads:-1"]/*/span[@title="Threads"]');
+        await this.driverHelper.waitAndClick(threadsViewTitleLocator);
     }
 
 }
