@@ -32,7 +32,7 @@ pipeline {
                description: 'Configuration Che server strategy')
 
         string(name: 'cheImageRepo',
-                defaultValue: "maxura/che-server",
+                defaultValue: "quay.io/crw_pr/che-server",
                 description: 'Repo of Che server image')
 
         string(name: 'cheImageTag',
@@ -83,22 +83,7 @@ pipeline {
                     } else {
                         mutableCheImageTag = cheImageTag
                     }
-
-                    withCredentials([string(credentialsId: 'ed71c034-60bc-4fb1-bfdf-9570209076b5', variable: 'maxura_docker_password')]) {
-                        sh """
-                            docker login -u maxura -p ${maxura_docker_password}
-
-                            TOKEN=\$(curl --user 'maxura:${maxura_docker_password}' "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-                            curl --head -H "Authorization: Bearer \$TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-                        """
-                    }
-
-                    echo "Print anonymous dockerhub limits"
-                    sh """
-                        TOKEN=\$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-                        curl --head -H "Authorization: Bearer \$TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-                    """
-               }
+                }
             }
         }
 
@@ -175,9 +160,17 @@ pipeline {
                     }
 
                     steps {
-                        echo "Build branch ${ghprbSourceBranch} of upstream projects"
-                        sh "sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686"
+                        echo "Install dependencies needed for build of Eclipse Che"
+                        sh """
+                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
 
+                            # workaround https://github.com/eclipse/che/issues/19093
+                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
+                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
+                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686
+                        """
+
+                        echo "Build branch ${ghprbSourceBranch} of upstream projects"
                         sh """
                             project_list=(
                                 eclipse/che-parent
@@ -225,28 +218,39 @@ pipeline {
             }
 
             steps {
-                sh """
-                    ${WORKSPACE}/dockerfiles/che/build.sh --organization:eclipseche --tag:${mutableCheImageTag} --dockerfile:Dockerfile
-                    docker tag eclipseche/che-server:${mutableCheImageTag} docker.io/${cheImageRepo}:${mutableCheImageTag}
-                    docker push docker.io/${cheImageRepo}:${mutableCheImageTag}
-                """
+                withCredentials([string(credentialsId: 'ed71c034-60bc-4fb1-bfdf-9570209076b5', variable: 'maxura_docker_password')]) {
+                    sh """
+                        echo "Build 'che-server' image"
+                        echo "${maxura_docker_password}" | docker login -u maxura --password-stdin
+
+                        ${WORKSPACE}/dockerfiles/che/build.sh --organization:eclipseche --tag:${mutableCheImageTag} --dockerfile:Dockerfile
+                    """
+                }
+
+                withCredentials([string(credentialsId: 'quay.io-crw_pr+crw_pr_bot_user_token', variable: 'QUAY_TOKEN')]) {
+                    sh """
+                        echo "Push 'che-server' image"
+                        echo "${QUAY_TOKEN}" | docker login -u="crw_pr+crw_pr_bot" --password-stdin quay.io/crw_pr
+
+                        docker tag eclipseche/che-server:${mutableCheImageTag} ${cheImageRepo}:${mutableCheImageTag}
+                        echo y | docker push ${cheImageRepo}:${mutableCheImageTag}
+                    """
+                }
             }
         }
 
         stage("Start Che") {
             steps {
                 script {
-                    echo "Pre-pull Eclipse Che and test images from dockerhub"
+                    echo "Pre-pull test images"
                     withCredentials([string(credentialsId: 'ed71c034-60bc-4fb1-bfdf-9570209076b5', variable: 'maxura_docker_password')]) {
                         sh """
                             eval \$(minikube docker-env)
-                            docker login -u maxura -p ${maxura_docker_password}
 
-                            docker pull mariolet/petclinic:d2831f9b
-                            docker pull centos/postgresql-96-centos7:9.6
-                            docker pull centos/mysql-57-centos7
                             docker pull ${cheImageRepo}:${mutableCheImageTag}
-                            docker pull docker.io/traefik:v2.2.8
+
+                            echo "${maxura_docker_password}" | docker login -u="maxura" --password-stdin docker.io
+                            docker pull docker.io/traefik:v2.2.8 || true
                         """
                     }
 
@@ -372,6 +376,7 @@ EOL"""
                        -e TS_SELENIUM_PASSWORD="admin" \\
                        -e TEST_SUITE="${e2eTestToRun}" ${e2eTestParameters} \\
                        -e NODE_TLS_REJECT_UNAUTHORIZED=0 \\
+                       -e TS_SELENIUM_LOG_LEVEL="TRACE" \\
                        -v ${WORKSPACE}/tests/e2e:/tmp/e2e:Z \\
                        quay.io/eclipse/che-e2e:${cheE2eImageTag}
                 """
@@ -381,23 +386,11 @@ EOL"""
 
     post {
         cleanup {
-            withCredentials([string(credentialsId: 'ed71c034-60bc-4fb1-bfdf-9570209076b5', variable: 'maxura_docker_password')]) {
-                sh """
-                    TOKEN=\$(curl --user 'maxura:${maxura_docker_password}' "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-                    curl --head -H "Authorization: Bearer \$TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-                """
-            }
-
-            echo "Print anonymous dockerhub limits"
-            sh """
-                TOKEN=\$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq -r .token)
-                curl --head -H "Authorization: Bearer \$TOKEN" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest
-            """
-
             sh """                   
                 mkdir -p $LOGS_AND_CONFIGS/kubectl
                 kubectl --namespace=eclipse-che get events > $LOGS_AND_CONFIGS/kubectl/events.txt || true
                 kubectl --namespace=eclipse-che get events -o json > $LOGS_AND_CONFIGS/kubectl/events.json || true
+                kubectl get pods -A >$LOGS_AND_CONFIGS/kubectl/pods.txt || true
 
                 mkdir -p $LOGS_AND_CONFIGS/che-config
 
@@ -416,13 +409,18 @@ EOL"""
                 for pod in \$PODS ; do \
                     kubectl logs --namespace=eclipse-che "\${pod}" --namespace=eclipse-che > $LOGS_AND_CONFIGS/che-logs/"\${pod}".pod.log || true; \
                 done
+                kubectl describe pod --namespace=eclipse-che > $LOGS_AND_CONFIGS/che-config/eclipse-che-pod-description.txt || true
 
                 mkdir -p $LOGS_AND_CONFIGS/workspace-logs
-                export WS_POD=\$(kubectl get pod --namespace=eclipse-che | grep ".workspace-" | awk '{print \$1}')
-                for c in \$(kubectl get pod --namespace=eclipse-che \$WS_POD -o jsonpath="{.spec.containers[*].name}") ; do \\
-                    kubectl logs \$(kubectl get pod --namespace=eclipse-che | grep ".workspace-" | awk '{print \$1}') "\${c}" --namespace=eclipse-che > $LOGS_AND_CONFIGS/workspace-logs/"\${c}".container.log || true; \\
+                WORKSPACE_NAMESPACE_NAME=admin-che
+                export WS_POD=\$(kubectl get pod --namespace=\$WORKSPACE_NAMESPACE_NAME | grep ".workspace-" | awk '{print \$1}')
+                for c in \$(kubectl get pod --namespace=\$WORKSPACE_NAMESPACE_NAME \$WS_POD -o jsonpath="{.spec.containers[*].name}") ; do
+                    CONTAINER_LOGS_DIR=$LOGS_AND_CONFIGS/workspace-logs/"\${c}"
+                    mkdir \$CONTAINER_LOGS_DIR
+                    kubectl logs \$WS_POD "\${c}" --namespace=\$WORKSPACE_NAMESPACE_NAME > \${CONTAINER_LOGS_DIR}.container.log || true;
+                    kubectl cp \$WORKSPACE_NAMESPACE_NAME/\$WS_POD:/workspace_logs \$CONTAINER_LOGS_DIR -c "\${c}" || true;
                 done
-                kubectl describe pod --namespace=eclipse-che \$WS_POD > $LOGS_AND_CONFIGS/che-config/workspace-pod-description.txt || true
+                kubectl describe pod --namespace=\$WORKSPACE_NAMESPACE_NAME \$WS_POD > $LOGS_AND_CONFIGS/che-config/workspace-pod-description.txt || true
 
                 mkdir -p $LOGS_AND_CONFIGS/docker
                 docker image ls > $LOGS_AND_CONFIGS/docker/images.txt || true
