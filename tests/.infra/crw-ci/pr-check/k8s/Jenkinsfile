@@ -1,7 +1,7 @@
 #!groovy
 
 pipeline {
-    agent { label "minikube-rhel7-24gb" }
+    agent { label "minikube-rhel7-16gb" }
 
     options {
         timestamps()
@@ -28,8 +28,8 @@ pipeline {
 
     parameters {
         booleanParam(name: 'cheSingleHost',
-               defaultValue: false,
-               description: 'Configuration Che server strategy')
+                defaultValue: false,
+                description: 'Configuration Che server strategy')
 
         string(name: 'cheImageRepo',
                 defaultValue: "quay.io/crw_pr/che-server",
@@ -46,7 +46,7 @@ pipeline {
         string(name: 'e2eTestToRun',
                 defaultValue: "test-happy-path",
                 description: 'TypeScript E2E test to run')
-        
+
         string(name: 'testWorkspaceDevfileUrl',
                 defaultValue: "",
                 description: 'URL of devfile of test workspace')
@@ -77,7 +77,7 @@ pipeline {
     stages {
         stage("Setup environment") {
             steps {
-                script { 
+                script {
                     if (cheImageTag == null || cheImageTag == '') {
                         mutableCheImageTag = ghprbPullId
                     } else {
@@ -154,7 +154,7 @@ pipeline {
 
                 stage("Build Che including upstream projects") {
                     when {
-                        expression { 
+                        expression {
                             return buildChe.toString() == 'true' || (params['ghprbCommentBody'] && (params.ghprbCommentBody == 'null' || params.ghprbCommentBody.contains("--rebuild")))
                         }
                     }
@@ -162,12 +162,22 @@ pipeline {
                     steps {
                         echo "Install dependencies needed for build of Eclipse Che"
                         sh """
-                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
-
                             # workaround https://github.com/eclipse/che/issues/19093
-                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
-                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 || true
-                            sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686
+                            for i in {1..100} 
+                            do
+                                echo "-- ATTEMPT \$i --"
+                                sudo yum install -y glibc.i686 libfontconfig.so.1 libstdc++-devel.i686 \\
+                                    --disablerepo=rhel-7-server-extras-os-rpms,rhel-7-server-ose-3.4-os-rpms,rhel-7-server-optional-os-rpms,rhel-7-server-supplementary-os-rpms || true
+                                
+                                sudo yum list installed | grep "glibc.i686" && sudo yum list installed | grep "fontconfig.i686" && sudo yum list installed | grep "libstdc++-devel.i686" && break
+                                
+                                sleep 10
+                                
+                                if [ "\$i" -gt "100" ]; then 
+                                    echo "Can't install dependencies."
+                                    exit 1
+                                fi
+                            done
                         """
 
                         echo "Build branch ${ghprbSourceBranch} of upstream projects"
@@ -213,7 +223,7 @@ pipeline {
         stage("Build and push che-server image") {
             when {
                 expression {
-                    return buildChe.toString() == 'true' || (params['ghprbCommentBody'] && (params.ghprbCommentBody == 'null' || params.ghprbCommentBody.contains("--rebuild"))) 
+                    return buildChe.toString() == 'true' || (params['ghprbCommentBody'] && (params.ghprbCommentBody == 'null' || params.ghprbCommentBody.contains("--rebuild")))
                 }
             }
 
@@ -267,6 +277,7 @@ spec:
       CHE_LIMITS_USER_WORKSPACES_RUN_COUNT: '-1'
       CHE_WORKSPACE_SIDECAR_IMAGE__PULL__POLICY: IfNotPresent
       CHE_WORKSPACE_PLUGIN__BROKER_PULL__POLICY: IfNotPresent
+      CHE_INFRA_KUBERNETES_WORKSPACE_START_TIMEOUT_MIN: '12'
   k8s:  
     singleHostExposureType: 'gateway'
   auth:
@@ -283,6 +294,7 @@ spec:
       CHE_LIMITS_USER_WORKSPACES_RUN_COUNT: '-1'
       CHE_WORKSPACE_SIDECAR_IMAGE__PULL__POLICY: IfNotPresent
       CHE_WORKSPACE_PLUGIN__BROKER_PULL__POLICY: IfNotPresent
+      CHE_INFRA_KUBERNETES_WORKSPACE_START_TIMEOUT_MIN: '12'
   auth:
     updateAdminPassword: false
 EOL"""
@@ -370,13 +382,13 @@ EOL"""
                      docker run --shm-size=1g --net=host --ipc=host \\
                        -p 5920:5920 \\
                        -e TS_SELENIUM_BASE_URL=\${CHE_URL} \\
-                       -e TS_SELENIUM_LOG_LEVEL='DEBUG' \\
                        -e TS_SELENIUM_MULTIUSER="true" \\
                        -e TS_SELENIUM_USERNAME="admin" \\
                        -e TS_SELENIUM_PASSWORD="admin" \\
                        -e TEST_SUITE="${e2eTestToRun}" ${e2eTestParameters} \\
                        -e NODE_TLS_REJECT_UNAUTHORIZED=0 \\
-                       -e TS_SELENIUM_LOG_LEVEL="TRACE" \\
+                       -e TS_SELENIUM_LOG_LEVEL=TRACE \\
+                       -e TS_SELENIUM_START_WORKSPACE_TIMEOUT=720000 \\
                        -v ${WORKSPACE}/tests/e2e:/tmp/e2e:Z \\
                        quay.io/eclipse/che-e2e:${cheE2eImageTag}
                 """
