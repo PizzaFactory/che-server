@@ -42,9 +42,9 @@ spec:
         name: load-testing-container
         resources:
           requests:
-            memory: "750Mi"
+            memory: "900Mi"
             cpu: "250m"
           limits:
-            memory: "750Mi"
+            memory: "900Mi"
             cpu: "700m"
       restartPolicy: Never    
