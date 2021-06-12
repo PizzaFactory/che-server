@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -46,27 +48,39 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean install -U -Pintegration
     - name: Build docker images
-      run:
-          ./dockerfiles/build.sh
+      id: build
+      run: |
+          SHORT_SHA1=$(git rev-parse --short HEAD)
+          echo ::set-output name=short_sha1::${SHORT_SHA1}
+          ./dockerfiles/build.sh --tag:nightly --sha-tag
     - name: Push docker images
       run: |
         docker push quay.io/eclipse/che-endpoint-watcher:nightly
+        docker push quay.io/eclipse/che-endpoint-watcher:${{ steps.build.outputs.short_sha1 }}
+
         docker push quay.io/eclipse/che-keycloak:nightly
+        docker push quay.io/eclipse/che-keycloak:${{ steps.build.outputs.short_sha1 }}
+
         docker push quay.io/eclipse/che-postgres:nightly
+        docker push quay.io/eclipse/che-postgres:${{ steps.build.outputs.short_sha1 }}
+
         docker push quay.io/eclipse/che-dev:nightly
+        docker push quay.io/eclipse/che-dev:${{ steps.build.outputs.short_sha1 }}
+
         docker push quay.io/eclipse/che-server:nightly
-        docker push quay.io/eclipse/che-dashboard-dev:nightly
-        docker push quay.io/eclipse/che-e2e:nightly
+        docker push quay.io/eclipse/che-server:${{ steps.build.outputs.short_sha1 }}
     - name: Build ubi8 Che Server image
-      run: 
+      run: |
         ./dockerfiles/che/build.sh --dockerfile:"rhel.Dockerfile" --tag:"rhel-nightly"
+        docker tag quay.io/eclipse/che-server:rhel-nightly quay.io/eclipse/che-server:rhel-${{ steps.build.outputs.short_sha1 }}
     - name: Push ubi8 Che Server image
-      run: 
+      run: |
         docker push quay.io/eclipse/che-server:rhel-nightly
+        docker push quay.io/eclipse/che-server:rhel-${{ steps.build.outputs.short_sha1 }}
     - name: Create failure MM message
       if: ${{ failure() }}
       run: |
-        echo "{\"text\":\":no_entry_sign: Nightly Che Server build has failed: https://github.com/eclipse/che/actions/workflows/nightly-build.yml\"}" > mattermost.json
+        echo "{\"text\":\":no_entry_sign: Nightly Che Server build has failed: https://github.com/eclipse-che/che-server/actions/workflows/nightly-build.yml\"}" > mattermost.json
     - name: Send MM message
       if: ${{ failure() }}
       uses: mattermost/action-mattermost-notify@1.0.2
