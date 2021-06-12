@@ -8,13 +8,11 @@ ORGANIZATION="eclipse"
 
  # KEEP RIGHT ORDER!!!
 DOCKER_FILES_LOCATIONS=(
-    che/dockerfiles/endpoint-watcher
-    che/dockerfiles/keycloak
-    che/dockerfiles/postgres
-    che/dockerfiles/dev
-    che/dockerfiles/che
-    che/dockerfiles/dashboard-dev
-    che/dockerfiles/e2e
+    che-server/dockerfiles/endpoint-watcher
+    che-server/dockerfiles/keycloak
+    che-server/dockerfiles/postgres
+    che-server/dockerfiles/dev
+    che-server/dockerfiles/che
 )
 
 IMAGES_LIST=(
@@ -23,8 +21,6 @@ IMAGES_LIST=(
     quay.io/eclipse/che-postgres
     quay.io/eclipse/che-dev
     quay.io/eclipse/che-server
-    quay.io/eclipse/che-dashboard-dev
-    quay.io/eclipse/che-e2e
 )
 
 loadMvnSettingsGpgKey() {
@@ -70,7 +66,7 @@ evaluateCheVariables() {
     echo "Branch: ${BRANCH}"
 
     if [[ ${CHE_VERSION} == *".0" ]]; then
-        BASEBRANCH="master"
+        BASEBRANCH="main"
     else
         BASEBRANCH="${BRANCH}"
     fi
@@ -83,7 +79,7 @@ checkoutProjects() {
     if [[ ${RELEASE_CHE_PARENT} = "true" ]]; then
         checkoutProject git@github.com:eclipse/che-parent
     fi
-    checkoutProject git@github.com:eclipse/che
+    checkoutProject git@github.com:eclipse-che/che-server
 }
 
 checkoutProject() {
@@ -117,7 +113,7 @@ checkoutTags() {
         git checkout ${CHE_VERSION}
         cd ..
     fi
-    cd che
+    cd che-server
     git checkout ${CHE_VERSION}
     cd ..
 }
@@ -158,7 +154,7 @@ commitChangeOrCreatePR() {
     PUSH_TRY="$(git push origin "${aBRANCH}")"
     # shellcheck disable=SC2181
     if [[ $? -gt 0 ]] || [[ $PUSH_TRY == *"protected branch hook declined"* ]]; then
-        # create pull request for master branch, as branch is restricted
+        # create pull request for main branch, as branch is restricted
         git branch "${PR_BRANCH}"
         git checkout "${PR_BRANCH}"
         git pull origin "${PR_BRANCH}"
@@ -173,7 +169,7 @@ createTags() {
     if [[ $RELEASE_CHE_PARENT = "true" ]]; then
         tagAndCommit che-parent
     fi
-    tagAndCommit che
+    tagAndCommit che-server
 }
 
 tagAndCommit() {
@@ -207,7 +203,7 @@ prepareRelease() {
         echo "[INFO] Che Parent version has been updated to ${VERSION_CHE_PARENT}"
     fi
 
-    pushd che >/dev/null
+    pushd che-server >/dev/null
         if [[ $RELEASE_CHE_PARENT = "true" ]]; then
             mvn versions:update-parent -DgenerateBackupPoms=false -DallowSnapshots=false -DparentVersion=[${VERSION_CHE_PARENT}]
         fi
@@ -215,7 +211,6 @@ prepareRelease() {
         echo "[INFO] Che Server version has been updated to ${CHE_VERSION} (parentVersion = ${VERSION_CHE_PARENT})"
 
         # Replace dependencies in che-server parent
-        sed -i -e "s#<che.dashboard.version>.*<\/che.dashboard.version>#<che.dashboard.version>${CHE_VERSION}<\/che.dashboard.version>#" pom.xml
         sed -i -e "s#<che.version>.*<\/che.version>#<che.version>${CHE_VERSION}<\/che.version>#" pom.xml
         echo "[INFO] Dependencies updated in che-server parent"
 
@@ -261,7 +256,7 @@ releaseCheServer() {
         popd >/dev/null
     fi
 
-    pushd che >/dev/null
+    pushd che-server >/dev/null
     rm -f $tmpmvnlog || true
     set +e
     mvn clean install -U -Pcodenvy-release -Dgpg.passphrase=$CHE_OSS_SONATYPE_PASSPHRASE | tee $tmpmvnlog
@@ -306,11 +301,7 @@ buildImages() {
     # BUILD IMAGES
     for image_dir in ${DOCKER_FILES_LOCATIONS[@]}
       do
-        if [[ ${image_dir} == "che/dockerfiles/che" ]]; then
-          bash "$(pwd)/${image_dir}/build.sh" --tag:${TAG} --build-arg:"CHE_DASHBOARD_VERSION=${CHE_VERSION},CHE_WORKSPACE_LOADER_VERSION=${CHE_VERSION}"  
-        else
-          bash "$(pwd)/${image_dir}/build.sh" --tag:${TAG} 
-        fi
+        bash "$(pwd)/${image_dir}/build.sh" --tag:${TAG}
         if [[ $? -ne 0 ]]; then
            echo "ERROR:"
            echo "build of '${image_dir}' image is failed!"
@@ -375,13 +366,12 @@ bumpVersion() {
         popd >/dev/null
     fi
 
-    pushd che >/dev/null
+    pushd che-server >/dev/null
         git checkout $2
         if [[ $RELEASE_CHE_PARENT = "true" ]]; then
             mvn versions:update-parent -DgenerateBackupPoms=false -DallowSnapshots=true -DparentVersion=[${VERSION_CHE_PARENT}]
         fi
         mvn versions:set -DgenerateBackupPoms=false -DallowSnapshots=true -DnewVersion=$1
-        sed -i -e "s#<che.dashboard.version>.*<\/che.dashboard.version>#<che.dashboard.version>$1<\/che.dashboard.version>#" pom.xml
         sed -i -e "s#<che.version>.*<\/che.version>#<che.version>$1<\/che.version>#" pom.xml
         pushd typescript-dto >/dev/null
             sed -i -e "s#<che.version>.*<\/che.version>#<che.version>${1}<\/che.version>#" dto-pom.xml
@@ -394,7 +384,7 @@ bumpVersion() {
 }
 
 updateImageTagsInCheServer() {
-    cd che
+    cd che-server
     git checkout ${BRANCH}
     cd .ci
     ./set_tag_version_images.sh ${CHE_VERSION}

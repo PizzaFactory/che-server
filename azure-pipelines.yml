@@ -8,14 +8,14 @@ trigger:
 
 variables:
   MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
-  MAVEN_OPTS: '-Xmx4096m -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER) -Dhttp.keepAlive=false -DskipTests -DskipIntegrationTests'
+  MAVEN_OPTS: '-Xmx4096m -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER) -Dhttp.keepAlive=false'
 
 jobs:
 - job: Build
   timeoutInMinutes: 0
 
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'Ubuntu-20.04'
 
   steps:
   - task: Docker@1
@@ -43,24 +43,24 @@ jobs:
     inputs:
       jdkVersionOption: '1.11'
       mavenPomFile: 'pom.xml'
-      mavenOptions: '$(MAVEN_OPTS)'
+      options: '-DskipTests -DskipIntegrationTests -Dlicense.skip'
+      mavenOpts: ${{ variables.MAVEN_OPTS }}
 
   - script: |
       cd dockerfiles/che
-      ./build.sh --build-arg:CHE_DASHBOARD_ORGANIZATION=camino.azurecr.io/camino
+      ./build.sh --organization:camino.azurecr.io/camino
     displayName: Building the image
 
   - script: |
-      docker tag quay.io/eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:nightly
-      docker tag quay.io/eclipse/che-server:nightly camino.azurecr.io/eclipse/che-server:$(build.buildId)
+      docker tag camino.azurecr.io/camino/che-server:next camino.azurecr.io/camino/che-server:$(build.buildId)
     displayName: Tagging
 
   - script: |
-      docker push camino.azurecr.io/eclipse/che-server:$(build.buildId)
-    displayName: Pushing tagged buildId
+      docker push camino.azurecr.io/camino/che-server:$(build.buildId)
+    displayName: Pushing tagged :buildId
 
   - script: |
-      docker push camino.azurecr.io/eclipse/che-server:nightly
+      docker push camino.azurecr.io/camino/che-server:next
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-    displayName: Pushing nightly
+    displayName: Pushing :next
 
