@@ -16,7 +16,7 @@ jobs:
         run: |
           git config --global user.email "monaka@monami-ya.com"
           git config --global user.name "Masaki Muranaka (bot)"
-          git remote add up https://github.com/eclipse/che.git
+          git remote add up https://github.com/eclipse-che/che-server.git
           git fetch --all
           git checkout -b prp-update-to-the-upstream
           git merge up/main -m 'Update to the upstream.'
