@@ -32,7 +32,7 @@ export class KeycloakLoader {
                     }
                 };
 
-                const url = "/api/keycloak/settings";
+                const url = "/api/keycloak/settings/";
                 request.open("GET", url, true);
                 request.send();
             } catch (e) {
