@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2021 Red Hat, Inc.
+ * Copyright (c) 2012-2022 Red Hat, Inc.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -14,6 +14,7 @@ package org.eclipse.che.api.factory.server.gitlab;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -179,6 +180,8 @@ public class GitlabOAuthTokenFetcher implements PersonalAccessTokenFetcher {
     return apiEndpoint
         + "/oauth/authenticate?oauth_provider="
         + OAUTH_PROVIDER_NAME
+        + "&scope="
+        + Joiner.on('+').join(DEFAULT_TOKEN_SCOPES)
         + "&request_method=POST&signature_method=rsa";
   }
 

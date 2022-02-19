@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2021 Red Hat, Inc.
+ * Copyright (c) 2012-2022 Red Hat, Inc.
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -105,6 +105,7 @@ import org.eclipse.che.multiuser.resource.api.ResourceModule;
 import org.eclipse.che.security.PBKDF2PasswordEncryptor;
 import org.eclipse.che.security.PasswordEncryptor;
 import org.eclipse.che.security.oauth.EmbeddedOAuthAPI;
+import org.eclipse.che.security.oauth.GitLabModule;
 import org.eclipse.che.security.oauth.OAuthAPI;
 import org.eclipse.che.security.oauth.OpenShiftOAuthModule;
 import org.eclipse.che.workspace.infrastructure.kubernetes.KubernetesClientConfigFactory;
@@ -284,6 +285,7 @@ public class WsMasterModule extends AbstractModule {
     install(new FactoryModuleBuilder().build(PassThroughProxyProvisionerFactory.class));
     installDefaultSecureServerExposer(infrastructure);
     install(new org.eclipse.che.security.oauth1.BitbucketModule());
+    install(new GitLabModule());
 
     configureMultiUserMode(persistenceProperties, infrastructure);
 
